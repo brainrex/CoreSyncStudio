@@ -1,68 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>CoreSync Studio v1.1 by BrainRex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreSync Studio v1.2 by BrainRex</title>
     <style>
-        /* Matrix Cyberpunk Operator Theme Layout */
+        /* Modern UI Design Tokens */
+        :root {
+            --bg-base: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-surface-hover: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --border-color: #334155;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --transition: all 0.2s ease;
+        }
+
+        [data-theme="light"] {
+            --bg-base: #f1f5f9;
+            --bg-surface: #ffffff;
+            --bg-surface-hover: #f8fafc;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --accent-primary: #0ea5e9;
+            --accent-hover: #0284c7;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --border-color: #e2e8f0;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Base Layout */
         body { 
-            font-family: 'Courier New', monospace; 
-            background: #0c0c0c; 
-            color: #00ffcc; 
-            padding: 15px; 
+            font-family: var(--font-family); 
+            background: var(--bg-base); 
+            color: var(--text-primary); 
+            padding: 20px 30px; 
             margin: 0; 
             box-sizing: border-box;
-            height: 100vh;
+            min-height: 100vh;
+            transition: var(--transition);
         }
         
+        /* Header */
         .studio-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px dashed #00ffcc;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .studio-title h2 {
             margin: 0;
-            font-size: 20px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            text-shadow: 0 0 8px rgba(0, 255, 204, 0.4);
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .version-badge {
-            background: #00ffcc;
-            color: #000;
-            padding: 1px 6px;
-            font-weight: bold;
-            font-size: 11px;
-            border-radius: 3px;
-            margin-left: 8px;
-            vertical-align: middle;
+            background: var(--bg-surface-hover);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            font-weight: 600;
+            font-size: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
         }
 
-        .system-clocks {
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
             text-align: right;
             font-size: 13px;
-            color: #00ffcc;
         }
 
-        /* Streamlined Horizontal Top Control Panel */
+        .theme-toggle {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-surface-hover);
+        }
+
+        /* Control Panel */
         .pipeline-status-panel {
-            background: #141414;
-            border: 1px solid #00ffcc;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-md);
         }
 
         .panel-row-horizontal {
             display: flex;
             align-items: flex-end;
-            gap: 15px;
+            gap: 20px;
             flex-wrap: nowrap;
         }
 
@@ -82,306 +142,222 @@
         .form-group-actions {
             flex: 0 0 auto;
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         label {
-            font-size: 11px;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-            letter-spacing: 1px;
-            color: #88ffeb;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
         }
 
-        .grid { display: flex; gap: 15px; margin-bottom: 12px; }
-        .box { background: #141414; padding: 10px; border-radius: 6px; border: 1px solid #222; width: 50%; position: relative; }
-        .box h3 { margin-top: 0; margin-bottom: 8px; font-size: 12px; letter-spacing: 0.5px; }
-        
-        /* Adjusted Video Displays for Better Presence Without Screen Overflow */
-        .video-container {
-            position: relative;
-            background: #000;
-            border-radius: 4px;
-            width: 100%;
-            aspect-ratio: 4/3; 
-            max-height: 50vh; 
-            overflow: hidden;
-            border: 1px solid #333;
-        }
-
-        video { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover;
-            display: block; 
-        }
-
-        /* Inputs, Uploaders & States */
+        /* Input Styles */
         input[type="text"], input[type="password"], input[type="file"] { 
-            background: #1a1a1a; 
-            color: #fff; 
-            border: 1px solid #333; 
-            padding: 8px 10px; 
+            background: var(--bg-base); 
+            color: var(--text-primary); 
+            border: 1px solid var(--border-color); 
+            padding: 8px 12px; 
             box-sizing: border-box; 
-            font-family: monospace;
-            border-radius: 4px;
-            font-size: 11px;
-            height: 34px;
-            transition: all 0.3s ease;
-        }
-        input:focus { border-color: #00ffcc; outline: none; }
-        
-        input[type="file"] {
-            padding: 6px;
-            font-size: 11px;
+            font-family: var(--font-family);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            height: 38px;
+            transition: var(--transition);
         }
 
-        /* New Key Validation Styles */
+        input:focus { 
+            border-color: var(--accent-primary); 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+        
+        input[type="file"] { padding: 7px; }
+
         input.key-valid {
-            border-color: #00ffcc !important;
-            box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
-            background: #0d1a17;
+            border-color: var(--success) !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
         input.key-invalid {
-            border-color: #ffaa00 !important;
-            box-shadow: 0 0 8px rgba(255, 170, 0, 0.2);
-            background: #21190e;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
         }
 
+        /* Buttons */
         button { 
-            font-family: monospace;
-            padding: 0 15px; 
-            height: 34px;
-            font-weight: bold; 
+            font-family: var(--font-family);
+            padding: 0 16px; 
+            height: 38px;
+            font-weight: 600; 
             cursor: pointer; 
             border: none; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-            border-radius: 4px;
-            font-size: 11px;
-            white-space: nowrap;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            transition: var(--transition);
         }
 
-        .btn-initialize { background: #00ffcc; color: #000; }
-        .btn-initialize:hover:not(:disabled) { background: #00cca3; box-shadow: 0 0 10px rgba(0, 255, 204, 0.4); }
+        .btn-initialize { background: var(--accent-primary); color: #ffffff; }
+        .btn-initialize:hover:not(:disabled) { background: var(--accent-hover); }
         
-        .btn-shutdown { background: #ff3333; color: #fff; }
-        .btn-shutdown:hover:not(:disabled) { background: #cc0000; box-shadow: 0 0 10px rgba(255, 51, 51, 0.4); }
+        .btn-shutdown { background: var(--danger); color: #ffffff; }
+        .btn-shutdown:hover:not(:disabled) { background: var(--danger-hover); }
 
-        /* Grayed out states */
         button:disabled {
-            background: #222222 !important;
-            color: #555555 !important;
+            background: var(--bg-surface-hover) !important;
+            color: var(--text-secondary) !important;
             cursor: not-allowed !important;
-            box-shadow: none !important;
-            border: 1px solid #333;
+            border: 1px solid var(--border-color);
         }
 
-        /* Live Indicator Badge */
+        /* Status Indicators */
         .status-pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 11px;
-            font-weight: bold;
-            text-transform: uppercase;
-            padding: 3px 8px;
-            border-radius: 12px;
-            background: #222;
-            border: 1px solid #444;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
         }
-        .status-pill.idle { color: #aaa; }
-        .status-pill.live { color: #ff3333; border-color: #ff3333; animation: blink 1.5s infinite; }
+        .status-pill.idle { color: var(--text-secondary); }
+        .status-pill.live { 
+            color: var(--danger); 
+            border-color: rgba(239, 68, 68, 0.3); 
+            background: rgba(239, 68, 68, 0.1);
+            animation: pulse 2s infinite; 
+        }
 
-        @keyframes blink { 50% { opacity: 0.5; } }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
 
-        /* Thumbnails Preview Container */
+        /* Asset Preview */
         .asset-preview-box {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 4px;
-            width: 34px;
-            height: 34px;
-            box-sizing: border-box;
+            background: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            width: 38px;
+            height: 38px;
             overflow: hidden;
         }
-        .impact-thumbnail {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            background: #000;
-            display: none;
-        }
-        .thumbnail-placeholder {
-            font-size: 8px;
-            color: #555;
-            text-align: center;
-        }
+        .impact-thumbnail { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .thumbnail-placeholder { font-size: 10px; color: var(--text-secondary); font-weight: 500; }
 
-        /* Collapsible Console Elements */
-        .collapsible-console-wrapper {
-            border: 1px solid #00ffcc;
-            background: #141414;
-            border-radius: 6px;
+        /* Video Workspace */
+        .grid { display: flex; gap: 24px; margin-bottom: 24px; }
+        .box { 
+            background: var(--bg-surface); 
+            padding: 16px; 
+            border-radius: var(--radius-lg); 
+            border: 1px solid var(--border-color); 
+            width: 50%; 
+            position: relative;
+            box-shadow: var(--shadow-md);
+        }
+        .box h3 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+        
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: var(--radius-md);
+            width: 100%;
+            aspect-ratio: 16/9; 
             overflow: hidden;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .fullscreen-trigger {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 6px 12px;
+            height: auto;
+            font-size: 11px;
+            border-radius: 20px;
+        }
+        .fullscreen-trigger:hover:not(:disabled) { background: rgba(15, 23, 42, 0.9); border-color: rgba(255, 255, 255, 0.3); }
+
+        /* Modern Console */
+        .collapsible-console-wrapper {
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
         }
         .console-header {
-            background: #1a1a1a;
-            padding: 8px 15px;
+            background: var(--bg-surface);
+            padding: 12px 20px;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             user-select: none;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid var(--border-color);
         }
-        .console-header:hover {
-            background: #222;
-        }
-        .console-content {
-            display: none; 
-            padding: 10px;
-            background: #050505;
-        }
-        .console { 
-            height: 120px; 
-            overflow-y: auto; 
-            font-size: 11px; 
-            color: #aaa; 
-        }
-        .console-controls {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 5px;
-        }
+        .console-header:hover { background: var(--bg-surface-hover); }
+        .console-content { display: none; padding: 16px; background: var(--bg-base); }
+        .console { height: 140px; overflow-y: auto; font-size: 12px; font-family: ui-monospace, monospace; color: var(--text-secondary); }
+        .console-controls { display: flex; justify-content: flex-end; margin-top: 12px; }
         .btn-clear-log {
-            width: auto;
-            height: 24px;
-            padding: 0 12px;
-            font-size: 10px;
-            background: #222;
-            color: #00ffcc;
-            border: 1px solid #00ffcc;
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            height: 30px;
+            font-size: 12px;
         }
-        .btn-clear-log:hover { background: #00ffcc; color: #000; }
+        .btn-clear-log:hover { background: var(--bg-surface-hover); }
 
-        /* Video Workspace Floating Elements */
-        .fullscreen-trigger {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(20, 20, 20, 0.8);
-            border: 1px solid #00ffcc;
-            color: #00ffcc;
-            padding: 3px 8px;
-            height: auto;
-            cursor: pointer;
-            z-index: 10;
-            font-size: 10px;
-            text-transform: uppercase;
-            border-radius: 4px;
-        }
-        .fullscreen-trigger:hover:not(:disabled) {
-            background: #00ffcc;
-            color: #000;
-        }
-
-        /* Fullscreen Overlay System Spec (80% Output / 20% Technical Control Tower) */
+        /* HUD Overlay (Clean Modern Version) */
         .hud-fullscreen-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #050505;
+            background: #000;
             z-index: 99999;
             box-sizing: border-box;
-            font-family: monospace;
+            font-family: var(--font-family);
         }
-        .hud-layout {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
+        .hud-layout { display: flex; width: 100%; height: 100%; }
         .hud-main-output {
-            width: 80%;
-            height: 100%;
-            background: #000;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-right: 2px solid #333;
+            width: 80%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            border-right: 1px solid var(--border-color);
+            background: #050505;
         }
-        .hud-main-output video {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            aspect-ratio: auto;
-            margin-top: 0;
-        }
+        .hud-main-output video { width: 100%; height: 100%; object-fit: contain; }
         .hud-control-tower {
-            width: 20%;
-            height: 100%;
-            background: #111111;
-            padding: 15px;
+            width: 20%; height: 100%;
+            background: var(--bg-base);
+            padding: 24px;
             box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            display: flex; flex-direction: column; justify-content: space-between;
             overflow-y: auto;
-            border-left: 1px solid #00ffcc;
+            color: var(--text-primary);
         }
         .hud-section {
-            border-bottom: 1px dashed #333;
-            padding-bottom: 12px;
-            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px; margin-bottom: 16px;
         }
-        .hud-section:last-child {
-            border-bottom: none;
-        }
-        .hud-label {
-            font-size: 10px;
-            color: #00ffcc;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-            display: block;
-            letter-spacing: 1px;
-        }
-        .hud-value {
-            font-size: 16px;
-            color: #fff;
-            font-weight: bold;
-        }
-        .hud-mirror-video {
-            width: 100%;
-            aspect-ratio: 4/3;
-            background: #000;
-            border: 1px solid #444;
-            margin-top: 5px;
-            object-fit: cover;
-        }
-        .hud-thumbnail-img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border: 1px solid #00ffcc;
-            background: #000;
-            display: none;
-        }
+        .hud-section:last-child { border-bottom: none; }
+        .hud-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+        .hud-value { font-size: 18px; font-weight: 600; }
+        .hud-mirror-video { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-md); object-fit: cover; }
+        .hud-thumbnail-img { width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-md); display: none; }
         .hud-mini-log {
-            height: 90px;
-            background: #050505;
-            border: 1px solid #222;
-            font-size: 9px;
-            padding: 5px;
-            overflow-y: auto;
-            color: #aaa;
+            height: 120px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+            font-size: 10px; font-family: ui-monospace, monospace; padding: 10px; overflow-y: auto; color: var(--text-secondary);
         }
     </style>
     
@@ -395,14 +371,27 @@
         let countdownInterval = null;
         let currentTimeRemaining = 480; 
 
+        // Theme Toggle Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('themeToggle');
+            const htmlEl = document.documentElement;
+            
+            toggleBtn.addEventListener('click', () => {
+                const currentTheme = htmlEl.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                htmlEl.setAttribute('data-theme', newTheme);
+                toggleBtn.innerHTML = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            });
+        });
+
         function logToConsole(text, isError = false) {
             const consoleEl = document.getElementById('sysConsole');
             const hudConsoleEl = document.getElementById('hudMiniConsole');
             if(!consoleEl) return;
             const timestamp = new Date().toLocaleTimeString();
-            const style = isError ? "color: #ff3333;" : "color: #00ffcc;";
+            const colorVar = isError ? "var(--danger)" : "var(--accent-primary)";
             
-            const standardLogHtml = `<div style="${style}">[${timestamp}] ${text}</div>`;
+            const standardLogHtml = `<div style="color: ${colorVar}; margin-bottom: 4px;">[${timestamp}] ${text}</div>`;
             consoleEl.innerHTML += standardLogHtml;
             consoleEl.scrollTop = consoleEl.scrollHeight;
 
@@ -415,12 +404,8 @@
         function startSystemClocks() {
             setInterval(() => {
                 const now = new Date();
-                const dateStr = now.toLocaleDateString();
-                const timeStr = now.toLocaleTimeString();
-                const formattedStr = `${dateStr} @ ${timeStr}`;
-                
-                document.getElementById('liveDateTime').innerText = formattedStr;
-                document.getElementById('hudLiveDateTime').innerText = formattedStr;
+                document.getElementById('liveDateTime').innerText = `${now.toLocaleDateString()} @ ${now.toLocaleTimeString()}`;
+                document.getElementById('hudLiveDateTime').innerText = `${now.toLocaleDateString()} @ ${now.toLocaleTimeString()}`;
             }, 1000);
         }
 
@@ -434,7 +419,7 @@
                 updateCountdownUI();
 
                 if (currentTimeRemaining <= 0) {
-                    logToConsole("⚠️ Session limit reached (Credit/Time exhaust). Auto disconnecting.");
+                    logToConsole("⚠️ Session limit reached (Credit/Time exhaust). Auto disconnecting.", true);
                     stopStream(); 
                 }
             }, 1000);
@@ -462,7 +447,6 @@
             const startBtn = document.getElementById('btnConnect');
             const fullscreenBtn = document.getElementById('launchFullscreen');
             
-            // Purely visual real-time verification 
             if (rawKey.length === 0) {
                 keyInput.classList.remove('key-valid', 'key-invalid');
             } else if (rawKey.startsWith('dct_') || rawKey.startsWith('ek_')) {
@@ -478,11 +462,7 @@
                 fullscreenBtn.disabled = false; 
             } else {
                 fullscreenBtn.disabled = true;  
-                if(rawKey.length > 0 && fileInput) {
-                    startBtn.disabled = false;
-                } else {
-                    startBtn.disabled = true;
-                }
+                startBtn.disabled = !(rawKey.length > 0 && fileInput);
             }
         }
 
@@ -499,11 +479,7 @@
                     mainThumb.src = e.target.result;
                     mainThumb.style.display = 'block';
                     placeholderText.style.display = 'none';
-                    
-                    if(hudThumb) {
-                        hudThumb.src = e.target.result;
-                        hudThumb.style.display = 'block';
-                    }
+                    if(hudThumb) { hudThumb.src = e.target.result; hudThumb.style.display = 'block'; }
                     if(hudPlaceholderText) hudPlaceholderText.style.display = 'none';
                     assessKeyStatus();
                 };
@@ -511,10 +487,7 @@
             } else {
                 mainThumb.style.display = 'none';
                 placeholderText.style.display = 'block';
-                if(hudThumb) {
-                    hudThumb.src = '';
-                    hudThumb.style.display = 'none';
-                }
+                if(hudThumb) { hudThumb.src = ''; hudThumb.style.display = 'none'; }
                 if(hudPlaceholderText) hudPlaceholderText.style.display = 'block';
                 assessKeyStatus();
             }
@@ -527,17 +500,12 @@
             if (!rawKey || !fileInput) return;
 
             logToConsole("Compiling session assets and configuration parameters...");
-
             document.getElementById('btnConnect').disabled = true;
             document.getElementById('btnStop').disabled = false;
             document.getElementById('hudBtnStop').disabled = false;
 
             try {
-                client = createDecartClient({ 
-                    apiKey: rawKey,
-                    baseUrl: "wss://api3.decart.ai" 
-                });
-                
+                client = createDecartClient({ apiKey: rawKey, baseUrl: "wss://api3.decart.ai" });
                 const model = models.realtime("lucy-latest");
 
                 if (!localStream) {
@@ -554,25 +522,18 @@
                 reader.readAsArrayBuffer(fileInput);
                 reader.onloadend = async () => {
                     const imageBlob = new Blob([reader.result], { type: fileInput.type });
-
                     logToConsole("Dispatching secure pipeline connection matrix to api3.decart.ai...");
 
                     realtimeClient = await client.realtime.connect(localStream, {
                         model: model,
-                        initialState: {
-                            prompt: { text: "Transform into this character" },
-                            image: imageBlob
-                        },
+                        initialState: { prompt: { text: "Transform into this character" }, image: imageBlob },
                         onRemoteStream: (transformedStream) => {
                             logToConsole("Pipeline loop linked! Streaming output frames...");
                             document.getElementById('remoteVideo').srcObject = transformedStream;
                             document.getElementById('hudRemoteVideo').srcObject = transformedStream;
-                            
                             toggleOperationalState(true);
                             initCountdownEngine();
-                            
                             document.getElementById('launchFullscreen').disabled = false;
-                            document.getElementById('btnConnect').disabled = true;
                         },
                         onError: (err) => {
                             logToConsole(`❌ CONNECTION HANDSHAKE REFUSED: ${err.message}`, true);
@@ -585,7 +546,6 @@
                         }
                     });
                 };
-
             } catch (error) {
                 logToConsole(`Initialization Failed: ${error.message}`, true);
                 alert("Initialization Failed: " + error.message);
@@ -595,9 +555,7 @@
 
         async function stopStream() {
             logToConsole("Terminating remote loop session context...");
-            if (realtimeClient) {
-                await realtimeClient.disconnect();
-            }
+            if (realtimeClient) await realtimeClient.disconnect();
             resetPipelineUI();
         }
 
@@ -610,19 +568,12 @@
                 localStream = null;
             }
 
-            const localVid = document.getElementById('localVideo');
-            const hudLocalVid = document.getElementById('hudLocalVideo');
-            if (localVid) localVid.srcObject = null;
-            if (hudLocalVid) hudLocalVid.srcObject = null;
-
-            const remoteVid = document.getElementById('remoteVideo');
-            const hudRemoteVid = document.getElementById('hudRemoteVideo');
-            
-            if (remoteVid) remoteVid.srcObject = null;
-            if (hudRemoteVid) hudRemoteVid.srcObject = null;
+            ['localVideo', 'hudLocalVideo', 'remoteVideo', 'hudRemoteVideo'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.srcObject = null;
+            });
             
             toggleOperationalState(false);
-            
             assessKeyStatus(); 
             document.getElementById('btnStop').disabled = true;
             document.getElementById('hudBtnStop').disabled = true;
@@ -630,24 +581,15 @@
         }
 
         function toggleOperationalState(isLive) {
-            const systemPill = document.getElementById('systemPill');
-            const hudSystemPill = document.getElementById('hudSystemPill');
-            
-            if(isLive) {
-                systemPill.className = "status-pill live";
-                systemPill.innerHTML = `● LIVE`;
-                if(hudSystemPill) {
-                    hudSystemPill.className = "status-pill live";
-                    hudSystemPill.innerHTML = `● LIVE`;
+            const statusHTML = isLive ? `<span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>LIVE` 
+                                      : `<span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>IDLE`;
+            ['systemPill', 'hudSystemPill'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.className = isLive ? "status-pill live" : "status-pill idle";
+                    el.innerHTML = statusHTML;
                 }
-            } else {
-                systemPill.className = "status-pill idle";
-                systemPill.innerHTML = `○ IDLE`;
-                if(hudSystemPill) {
-                    hudSystemPill.className = "status-pill idle";
-                    hudSystemPill.innerHTML = `○ IDLE`;
-                }
-            }
+            });
         }
 
         function toggleConsoleCollapsible() {
@@ -656,38 +598,26 @@
             
             if(content.style.display === "block") {
                 content.style.display = "none";
-                statusIndicator.innerText = "[+] EXPAND SYSTEM OUTPUT";
-                document.body.style.overflow = "hidden"; 
+                statusIndicator.innerText = "Show Output";
+                document.body.style.overflow = "auto"; 
             } else {
                 content.style.display = "block";
-                statusIndicator.innerText = "[-] CLOSE";
-                document.body.style.overflow = "auto"; 
+                statusIndicator.innerText = "Hide Output";
             }
         }
 
         function clearLogBuffer() {
             document.getElementById('sysConsole').innerHTML = "";
-            if(document.getElementById('hudMiniConsole')) {
-                document.getElementById('hudMiniConsole').innerHTML = "";
-            }
+            if(document.getElementById('hudMiniConsole')) document.getElementById('hudMiniConsole').innerHTML = "";
             logToConsole("System logging registers flushed.");
         }
 
         function triggerHUDMode(activate) {
-            const displayOverlay = document.getElementById('hudOverlay');
-            if(activate) {
-                displayOverlay.style.display = "block";
-            } else {
-                displayOverlay.style.display = "none";
-            }
-        }
-
-        function initWindowConstraints() {
-            document.body.style.overflow = "hidden";
+            document.getElementById('hudOverlay').style.display = activate ? "block" : "none";
+            document.body.style.overflow = activate ? "hidden" : "auto";
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            initWindowConstraints();
             startSystemClocks();
             assessKeyStatus(); 
 
@@ -710,14 +640,20 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v1.1</span></h2>
-            <div style="font-size: 11px; color:#666; margin-top:2px;">Engine operator: BrainRex</div>
+            <h2>CoreSync Studio <span class="version-badge">v1.2</span></h2>
         </div>
-        <div class="system-clocks">
-            <div id="liveDateTime">--/--/---- --:--:--</div>
-            <div style="margin-top: 5px;">
-                <span class="status-pill idle" id="systemPill">○ IDLE</span>
-                <span style="margin-left:10px; color:#aaa;">SESSION CAP: <span id="sessionCountdown" style="color:#00ffcc; font-weight:bold;">8:00</span></span>
+        <div class="header-controls">
+            <button id="themeToggle" class="theme-toggle">☀️ Light Mode</button>
+            <div>
+                <div id="liveDateTime" style="font-weight: 500; margin-bottom: 4px;">--/--/---- --:--:--</div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="status-pill idle" id="systemPill">
+                        <span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>IDLE
+                    </span>
+                    <span style="color:var(--text-secondary); font-weight: 500;">
+                        Session Limit: <span id="sessionCountdown" style="color:var(--text-primary); font-family: ui-monospace, monospace;">8:00</span>
+                    </span>
+                </div>
             </div>
         </div>
     </header>
@@ -733,7 +669,7 @@
                 <input type="file" id="photoUpload" accept="image/*">
             </div>
             <div class="form-group-thumb">
-                <label>Reference Thumbnail</label>
+                <label>Thumbnail</label>
                 <div class="asset-preview-box">
                     <img id="mainThumb" class="impact-thumbnail" alt="Reference View">
                     <span id="thumbPlaceholder" class="thumbnail-placeholder">NONE</span>
@@ -741,20 +677,20 @@
             </div>
             <div class="form-group-actions">
                 <button id="btnConnect" class="btn-initialize" disabled>Start Session</button>
-                <button id="btnStop" class="btn-shutdown" disabled>Stop Session</button>
+                <button id="btnStop" class="btn-shutdown" disabled>Stop</button>
             </div>
         </div>
     </div>
 
     <div class="grid">
         <div class="box">
-            <h3>INPUT CAMERA</h3>
+            <h3>Input Camera</h3>
             <div class="video-container">
                 <video id="localVideo" autoplay muted playsinline></video>
             </div>
         </div>
         <div class="box">
-            <h3>LIVE STREAM OUTPUT</h3>
+            <h3>Live Output</h3>
             <button class="fullscreen-trigger" id="launchFullscreen" disabled>⛶ Fullscreen</button>
             <div class="video-container">
                 <video id="remoteVideo" autoplay playsinline></video>
@@ -764,11 +700,11 @@
 
     <div class="collapsible-console-wrapper">
         <div class="console-header" id="consoleHeader">
-            <span style="font-weight: bold; letter-spacing: 1px;">⚙️ LOGS</span>
-            <span id="consoleToggleStatus" style="font-size: 11px; color:#00ffcc;">[+] EXPAND SYSTEM OUTPUT</span>
+            <span style="font-weight: 600;">System Logs</span>
+            <span id="consoleToggleStatus" style="font-size: 12px; color:var(--text-secondary);">Show Output</span>
         </div>
         <div class="console-content" id="consoleContent">
-            <div class="console" id="sysConsole">CoreSync system diagnostic registers active...</div>
+            <div class="console" id="sysConsole">CoreSync system diagnostics initialized...</div>
             <div class="console-controls">
                 <button id="btnClearLog" class="btn-clear-log">Clear Logs</button>
             </div>
@@ -777,60 +713,60 @@
 
     <div id="hudOverlay" class="hud-fullscreen-overlay">
         <div class="hud-layout">
-            
             <div class="hud-main-output">
                 <video id="hudRemoteVideo" autoplay playsinline></video>
             </div>
             
             <div class="hud-control-tower">
                 <div>
-                    <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #00ffcc; padding-bottom: 10px;">
+                    <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-size:11px; font-weight:bold; color:#00ffcc;">CORESYNC HUD</div>
-                            <div style="font-size:8px; color:#777;">v1.1 MONITOR</div>
+                            <div style="font-weight:600;">CoreSync HUD</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">v1.2 Monitor</div>
                         </div>
-                        <button id="hudExitBtn" style="width:auto; height: 26px; padding: 0 10px; background:#ff3333; color:#fff; font-size:10px;">✕ EXIT</button>
+                        <button id="hudExitBtn" style="height: 30px; font-size: 11px; padding: 0 12px; background:var(--bg-surface-hover); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer;">✕ Close</button>
                     </div>
 
                     <div class="hud-section">
-                        <span class="hud-label">Active</span>
-                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                            <span class="status-pill idle" id="hudSystemPill">○ IDLE</span>
-                            <button id="hudBtnStop" class="btn-shutdown" style="flex-grow: 1; height: 30px; font-size: 10px; padding: 0 10px;" disabled>Stop Session</button>
+                        <span class="hud-label">Status</span>
+                        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+                            <span class="status-pill idle" id="hudSystemPill">
+                                <span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>IDLE
+                            </span>
+                            <button id="hudBtnStop" class="btn-shutdown" style="flex-grow: 1; height: 32px; font-size: 12px;" disabled>Stop Stream</button>
                         </div>
                     </div>
 
                     <div class="hud-section">
-                        <span class="hud-label">Current Time Countdown</span>
-                        <span class="hud-value" id="hudSessionCountdown" style="color: #ff3333; font-family: monospace;">8:00</span>
+                        <span class="hud-label">Time Remaining</span>
+                        <span class="hud-value" id="hudSessionCountdown" style="color: var(--danger); font-family: ui-monospace, monospace;">8:00</span>
                     </div>
 
                     <div class="hud-section">
-                        <span class="hud-label">Current Time and Date</span>
-                        <div id="hudLiveDateTime" style="font-size: 11px; color:#fff;">--/--/---- --:--:--</div>
+                        <span class="hud-label">System Time</span>
+                        <div id="hudLiveDateTime" style="font-size: 12px;">--/--/---- --:--:--</div>
                     </div>
 
                     <div class="hud-section">
-                        <span class="hud-label">Reference Thumbnail</span>
-                        <div style="margin-top:5px;">
+                        <span class="hud-label">Reference</span>
+                        <div style="margin-top:8px;">
                             <img id="hudThumb" class="hud-thumbnail-img" alt="HUD Thumbnail Buffer">
-                            <span id="hudThumbPlaceholder" style="font-size: 10px; color:#555;">No Resource Matrix Loaded</span>
+                            <span id="hudThumbPlaceholder" style="font-size: 11px; color:var(--text-secondary);">No asset loaded</span>
                         </div>
                     </div>
 
                     <div class="hud-section">
-                        <span class="hud-label">Input Camera</span>
+                        <span class="hud-label">Input Feed</span>
                         <video id="hudLocalVideo" class="hud-mirror-video" autoplay muted playsinline></video>
                     </div>
                 </div>
 
                 <div>
-                    <div class="hud-section" style="margin-bottom: 0; padding-bottom: 0;">
-                        <span class="hud-label">Logs</span>
+                    <div class="hud-section" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+                        <span class="hud-label">Mini Log</span>
                         <div id="hudMiniConsole" class="hud-mini-log"></div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
