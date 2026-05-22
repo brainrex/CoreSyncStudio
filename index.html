@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoreSync Studio v1.2 by BrainRex</title>
+    <title>CoreSync Studio v2.0.0 by BrainRex</title>
     <style>
         /* Modern UI Design Tokens */
         :root {
@@ -74,13 +74,13 @@
         }
 
         .version-badge {
-            background: var(--bg-surface-hover);
-            color: var(--text-secondary);
+            background: var(--accent-primary);
+            color: #fff;
             padding: 4px 8px;
             font-weight: 600;
             font-size: 12px;
             border-radius: 6px;
-            border: 1px solid var(--border-color);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
         }
 
         .header-controls {
@@ -119,18 +119,18 @@
             box-shadow: var(--shadow-md);
         }
 
-        .panel-row-horizontal {
+        .panel-grid {
             display: flex;
-            align-items: flex-end;
+            flex-wrap: wrap;
             gap: 20px;
-            flex-wrap: nowrap;
+            align-items: flex-end;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
             flex: 1;
-            min-width: 0;
+            min-width: 180px;
         }
 
         .form-group-thumb {
@@ -143,6 +143,11 @@
             flex: 0 0 auto;
             display: flex;
             gap: 12px;
+            width: 100%;
+            justify-content: flex-end;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 10px;
         }
 
         label {
@@ -153,7 +158,7 @@
         }
 
         /* Input Styles */
-        input[type="text"], input[type="password"], input[type="file"] { 
+        input[type="text"], input[type="password"], input[type="file"], input[type="number"], select { 
             background: var(--bg-base); 
             color: var(--text-primary); 
             border: 1px solid var(--border-color); 
@@ -164,9 +169,10 @@
             font-size: 13px;
             height: 38px;
             transition: var(--transition);
+            appearance: none;
         }
 
-        input:focus { 
+        input:focus, select:focus { 
             border-color: var(--accent-primary); 
             outline: none; 
             box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
@@ -186,7 +192,7 @@
         /* Buttons */
         button { 
             font-family: var(--font-family);
-            padding: 0 16px; 
+            padding: 0 20px; 
             height: 38px;
             font-weight: 600; 
             cursor: pointer; 
@@ -285,6 +291,7 @@
             height: auto;
             font-size: 11px;
             border-radius: 20px;
+            z-index: 10;
         }
         .fullscreen-trigger:hover:not(:disabled) { background: rgba(15, 23, 42, 0.9); border-color: rgba(255, 255, 255, 0.3); }
 
@@ -319,7 +326,7 @@
         }
         .btn-clear-log:hover { background: var(--bg-surface-hover); }
 
-        /* HUD Overlay (Clean Modern Version) */
+        /* HUD Overlay */
         .hud-fullscreen-overlay {
             display: none;
             position: fixed;
@@ -369,7 +376,35 @@
         let localStream;
         
         let countdownInterval = null;
-        let currentTimeRemaining = 480; 
+        let currentTimeRemaining = 0; 
+        const BURN_RATE = 2; // 2 credits per second
+
+        // Hardware Initialization
+        async function fetchHardware() {
+            try {
+                // Request temporary permission to read hardware labels properly
+                await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(s => s.getTracks().forEach(t => t.stop())).catch(e => console.log(e));
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const camSelect = document.getElementById('cameraSelect');
+                camSelect.innerHTML = '';
+                
+                let count = 1;
+                devices.forEach(device => {
+                    if (device.kind === 'videoinput') {
+                        const opt = document.createElement('option');
+                        opt.value = device.deviceId;
+                        opt.text = device.label || `Camera ${count++}`;
+                        camSelect.appendChild(opt);
+                    }
+                });
+                
+                if (camSelect.options.length === 0) {
+                    camSelect.innerHTML = '<option value="">No Camera Found</option>';
+                }
+            } catch (err) {
+                logToConsole("Hardware scan failed: " + err.message, true);
+            }
+        }
 
         // Theme Toggle Logic
         document.addEventListener('DOMContentLoaded', () => {
@@ -382,6 +417,8 @@
                 htmlEl.setAttribute('data-theme', newTheme);
                 toggleBtn.innerHTML = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
             });
+            
+            fetchHardware();
         });
 
         function logToConsole(text, isError = false) {
@@ -411,7 +448,11 @@
 
         function initCountdownEngine() {
             clearInterval(countdownInterval);
-            currentTimeRemaining = 480; 
+            
+            // Calculate initial time based on credits
+            const credits = parseInt(document.getElementById('creditInput').value) || 0;
+            currentTimeRemaining = Math.floor(credits / BURN_RATE);
+            
             updateCountdownUI();
 
             countdownInterval = setInterval(() => {
@@ -419,7 +460,7 @@
                 updateCountdownUI();
 
                 if (currentTimeRemaining <= 0) {
-                    logToConsole("⚠️ Session limit reached (Credit/Time exhaust). Auto disconnecting.", true);
+                    logToConsole("⚠️ Credits exhausted. Hard stop engaged to prevent overage.", true);
                     stopStream(); 
                 }
             }, 1000);
@@ -427,11 +468,13 @@
 
         function clearCountdownEngine() {
             clearInterval(countdownInterval);
-            currentTimeRemaining = 480;
+            const credits = parseInt(document.getElementById('creditInput').value) || 0;
+            currentTimeRemaining = Math.floor(credits / BURN_RATE);
             updateCountdownUI();
         }
 
         function updateCountdownUI() {
+            if (currentTimeRemaining < 0) currentTimeRemaining = 0;
             const minutes = Math.floor(currentTimeRemaining / 60);
             const seconds = currentTimeRemaining % 60;
             const formatStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -444,9 +487,14 @@
             const keyInput = document.getElementById('apiKey');
             const rawKey = keyInput.value.trim();
             const fileInput = document.getElementById('photoUpload').files[0];
+            const creditInput = document.getElementById('creditInput');
             const startBtn = document.getElementById('btnConnect');
             const fullscreenBtn = document.getElementById('launchFullscreen');
             
+            // Enforce max 1000 limit dynamically
+            if (parseInt(creditInput.value) > 1000) creditInput.value = 1000;
+            const credits = parseInt(creditInput.value) || 0;
+
             if (rawKey.length === 0) {
                 keyInput.classList.remove('key-valid', 'key-invalid');
             } else if (rawKey.startsWith('dct_') || rawKey.startsWith('ek_')) {
@@ -457,12 +505,16 @@
                 keyInput.classList.remove('key-valid');
             }
 
+            // Sync projected time immediately as user types credits
+            clearCountdownEngine();
+
             if(realtimeClient) {
                 startBtn.disabled = true;
                 fullscreenBtn.disabled = false; 
             } else {
                 fullscreenBtn.disabled = true;  
-                startBtn.disabled = !(rawKey.length > 0 && fileInput);
+                // Gating logic: Require Key + Image + Credits > 0
+                startBtn.disabled = !(rawKey.length > 0 && fileInput && credits > 0);
             }
         }
 
@@ -496,33 +548,47 @@
         async function startStream() {
             let rawKey = document.getElementById('apiKey').value.trim();
             const fileInput = document.getElementById('photoUpload').files[0];
+            const credits = parseInt(document.getElementById('creditInput').value) || 0;
+            const camId = document.getElementById('cameraSelect').value;
+            const resVal = document.getElementById('resSelect').value.split('x');
 
-            if (!rawKey || !fileInput) return;
+            if (!rawKey || !fileInput || credits <= 0) return;
 
-            logToConsole("Compiling session assets and configuration parameters...");
+            logToConsole(`Compiling session assets at ${resVal[0]}x${resVal[1]}...`);
             document.getElementById('btnConnect').disabled = true;
             document.getElementById('btnStop').disabled = false;
             document.getElementById('hudBtnStop').disabled = false;
+            
+            // Lock inputs during stream
+            document.getElementById('creditInput').disabled = true;
+            document.getElementById('resSelect').disabled = true;
+            document.getElementById('cameraSelect').disabled = true;
 
             try {
                 client = createDecartClient({ apiKey: rawKey, baseUrl: "wss://api3.decart.ai" });
                 const model = models.realtime("lucy-latest");
 
                 if (!localStream) {
-                    localStream = await navigator.mediaDevices.getUserMedia({
-                        video: { frameRate: 30, width: 1280, height: 720 },
+                    const constraints = {
+                        video: { 
+                            deviceId: camId ? { exact: camId } : undefined,
+                            width: { ideal: parseInt(resVal[0]) }, 
+                            height: { ideal: parseInt(resVal[1]) },
+                            frameRate: 30 
+                        },
                         audio: false
-                    });
+                    };
+                    localStream = await navigator.mediaDevices.getUserMedia(constraints);
                     document.getElementById('localVideo').srcObject = localStream;
                     document.getElementById('hudLocalVideo').srcObject = localStream;
-                    logToConsole("Hardware device camera feed connected successfully.");
+                    logToConsole("Hardware device linked and quality constraints applied.");
                 }
 
                 const reader = new FileReader();
                 reader.readAsArrayBuffer(fileInput);
                 reader.onloadend = async () => {
                     const imageBlob = new Blob([reader.result], { type: fileInput.type });
-                    logToConsole("Dispatching secure pipeline connection matrix to api3.decart.ai...");
+                    logToConsole("Dispatching secure pipeline matrix (2 cr/sec burn rate)...");
 
                     realtimeClient = await client.realtime.connect(localStream, {
                         model: model,
@@ -536,7 +602,7 @@
                             document.getElementById('launchFullscreen').disabled = false;
                         },
                         onError: (err) => {
-                            logToConsole(`❌ CONNECTION HANDSHAKE REFUSED: ${err.message}`, true);
+                            logToConsole(`❌ CONNECTION REFUSED: ${err.message}`, true);
                             alert("Decart Engine Error: " + err.message);
                             resetPipelineUI();
                         },
@@ -568,12 +634,19 @@
                 localStream = null;
             }
 
+            // Blanks the video elements without closing the HUD
             ['localVideo', 'hudLocalVideo', 'remoteVideo', 'hudRemoteVideo'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.srcObject = null;
             });
             
             toggleOperationalState(false);
+            
+            // Unlock inputs
+            document.getElementById('creditInput').disabled = false;
+            document.getElementById('resSelect').disabled = false;
+            document.getElementById('cameraSelect').disabled = false;
+            
             assessKeyStatus(); 
             document.getElementById('btnStop').disabled = true;
             document.getElementById('hudBtnStop').disabled = true;
@@ -626,6 +699,7 @@
             document.getElementById('hudBtnStop').addEventListener('click', stopStream);
             
             document.getElementById('apiKey').addEventListener('input', assessKeyStatus);
+            document.getElementById('creditInput').addEventListener('input', assessKeyStatus);
             document.getElementById('photoUpload').addEventListener('change', handleImageSync);
             
             document.getElementById('consoleHeader').addEventListener('click', toggleConsoleCollapsible);
@@ -640,7 +714,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v1.2</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v2.0.0</span></h2>
         </div>
         <div class="header-controls">
             <button id="themeToggle" class="theme-toggle">☀️ Light Mode</button>
@@ -651,7 +725,7 @@
                         <span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>IDLE
                     </span>
                     <span style="color:var(--text-secondary); font-weight: 500;">
-                        Session Limit: <span id="sessionCountdown" style="color:var(--text-primary); font-family: ui-monospace, monospace;">8:00</span>
+                        Session Limit: <span id="sessionCountdown" style="color:var(--text-primary); font-family: ui-monospace, monospace;">0:00</span>
                     </span>
                 </div>
             </div>
@@ -659,10 +733,28 @@
     </header>
     
     <div class="pipeline-status-panel">
-        <div class="panel-row-horizontal">
+        <div class="panel-grid">
             <div class="form-group">
                 <label>Stream Key</label>
-                <input type="password" id="apiKey" placeholder="Enter Stream Key (dct_... or ek_...)">
+                <input type="password" id="apiKey" placeholder="Enter Stream Key (dct_...)">
+            </div>
+            <div class="form-group">
+                <label>Credits (Max 1000)</label>
+                <input type="number" id="creditInput" placeholder="1000" min="0" max="1000" value="1000">
+            </div>
+            <div class="form-group">
+                <label>Camera Hardware</label>
+                <select id="cameraSelect">
+                    <option value="">Detecting...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Stream Quality</label>
+                <select id="resSelect">
+                    <option value="1280x720">720p (High)</option>
+                    <option value="854x480">480p (Balanced)</option>
+                    <option value="640x360">360p (Low)</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Reference Asset</label>
@@ -722,7 +814,7 @@
                     <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight:600;">CoreSync HUD</div>
-                            <div style="font-size:10px; color:var(--text-secondary);">v1.2 Monitor</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">v2.0.0 Monitor</div>
                         </div>
                         <button id="hudExitBtn" style="height: 30px; font-size: 11px; padding: 0 12px; background:var(--bg-surface-hover); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer;">✕ Close</button>
                     </div>
@@ -739,7 +831,7 @@
 
                     <div class="hud-section">
                         <span class="hud-label">Time Remaining</span>
-                        <span class="hud-value" id="hudSessionCountdown" style="color: var(--danger); font-family: ui-monospace, monospace;">8:00</span>
+                        <span class="hud-value" id="hudSessionCountdown" style="color: var(--danger); font-family: ui-monospace, monospace;">0:00</span>
                     </div>
 
                     <div class="hud-section">
