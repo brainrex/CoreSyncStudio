@@ -2,8 +2,8 @@
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoreSync Studio v2.0.0 by BrainRex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CoreSync Studio v2.1.0 by BrainRex</title>
     <style>
         /* Modern UI Design Tokens */
         :root {
@@ -17,6 +17,7 @@
             --danger: #ef4444;
             --danger-hover: #dc2626;
             --success: #10b981;
+            --warning: #f59e0b;
             --border-color: #334155;
             --radius-md: 8px;
             --radius-lg: 12px;
@@ -51,6 +52,7 @@
             box-sizing: border-box;
             min-height: 100vh;
             transition: var(--transition);
+            touch-action: manipulation;
         }
         
         /* Header */
@@ -234,11 +236,22 @@
             background: rgba(239, 68, 68, 0.1);
             animation: pulse 2s infinite; 
         }
+        .status-pill.reconnecting {
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.1);
+            animation: pulseWarning 1s infinite;
+        }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
             70% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        @keyframes pulseWarning {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
         }
 
         /* Asset Preview */
@@ -326,7 +339,7 @@
         }
         .btn-clear-log:hover { background: var(--bg-surface-hover); }
 
-        /* HUD Overlay */
+        /* True Mobile Fullscreen Engine */
         .hud-fullscreen-overlay {
             display: none;
             position: fixed;
@@ -335,6 +348,10 @@
             z-index: 99999;
             box-sizing: border-box;
             font-family: var(--font-family);
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
         }
         .hud-layout { display: flex; width: 100%; height: 100%; }
         .hud-main-output {
@@ -342,8 +359,9 @@
             display: flex; align-items: center; justify-content: center;
             border-right: 1px solid var(--border-color);
             background: #050505;
+            position: relative;
         }
-        .hud-main-output video { width: 100%; height: 100%; object-fit: contain; }
+        .hud-main-output video { width: 100%; height: 100%; object-fit: cover; }
         .hud-control-tower {
             width: 20%; height: 100%;
             background: var(--bg-base);
@@ -366,10 +384,45 @@
             height: 120px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md);
             font-size: 10px; font-family: ui-monospace, monospace; padding: 10px; overflow-y: auto; color: var(--text-secondary);
         }
+
+        /* Mobile Breakpoint Adapters */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            .studio-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .header-controls { text-align: left; width: 100%; justify-content: space-between; }
+            .panel-grid { flex-direction: column; align-items: stretch; }
+            .form-group { min-width: 100%; }
+            .form-group-actions { justify-content: space-between; }
+            .grid { flex-direction: column; gap: 16px; }
+            .box { width: 100%; box-sizing: border-box; }
+            .video-container { aspect-ratio: 11/14; } /* Immersive Vertical Feed for Mobile Screen Ratio */
+            .hud-layout { flex-direction: column-reverse; }
+            .hud-main-output { width: 100%; height: 70%; }
+            .hud-control-tower { width: 100%; height: 30%; padding: 12px; }
+            .hud-section { padding-bottom: 8px; margin-bottom: 8px; }
+            .hud-mirror-video, .hud-section:nth-child(4), .hud-section:nth-child(5) { display: none; }
+        }
     </style>
     
     <script type="module">
-        import { createDecartClient, models } from "https://esm.sh/@decartai/sdk";
+        let sdkModuleLoaded = false;
+        let createDecartClient, models;
+
+        // [FIX #1]: Wrapped SDK Import inside Explicit try/catch block to prevent Silent Bricking
+        try {
+            const sdk = await import("https://esm.sh/@decartai/sdk");
+            createDecartClient = sdk.createDecartClient;
+            models = sdk.models;
+            sdkModuleLoaded = true;
+            console.log("[OK] Decart Core Module Framework compiled safely.");
+        } catch (sdkError) {
+            console.error("[CRITICAL] SDK Import Failed via ESM Link: ", sdkError);
+            document.addEventListener('DOMContentLoaded', () => {
+                logToConsole("❌ SDK Error: Unable to fetch cloud stream wrappers. Start disabled.", true);
+                const startBtn = document.getElementById('btnConnect');
+                if (startBtn) startBtn.disabled = true;
+            });
+        }
 
         let client;
         let realtimeClient;
@@ -379,11 +432,18 @@
         let currentTimeRemaining = 0; 
         const BURN_RATE = 2; // 2 credits per second
 
-        // Hardware Initialization
+        // [FEATURE]: Resilient State Machine Reconnect Listener System
+        let reconnectAttempts = 0;
+        let isReconnecting = false;
+        const MAX_RECONNECT_ATTEMPTS = 3;
+        const RECONNECT_DELAYS = [2000, 4000, 6000]; // 2s, 4s, 6s
+
+        // Hardware Scan Configuration
         async function fetchHardware() {
             try {
-                // Request temporary permission to read hardware labels properly
-                await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(s => s.getTracks().forEach(t => t.stop())).catch(e => console.log(e));
+                await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+                    .then(s => s.getTracks().forEach(t => t.stop()))
+                    .catch(e => console.log(e));
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const camSelect = document.getElementById('cameraSelect');
                 camSelect.innerHTML = '';
@@ -406,7 +466,7 @@
             }
         }
 
-        // Theme Toggle Logic
+        // Theme Configuration
         document.addEventListener('DOMContentLoaded', () => {
             const toggleBtn = document.getElementById('themeToggle');
             const htmlEl = document.documentElement;
@@ -426,7 +486,8 @@
             const hudConsoleEl = document.getElementById('hudMiniConsole');
             if(!consoleEl) return;
             const timestamp = new Date().toLocaleTimeString();
-            const colorVar = isError ? "var(--danger)" : "var(--accent-primary)";
+            let colorVar = isError ? "var(--danger)" : "var(--accent-primary)";
+            if (isReconnecting) colorVar = "var(--warning)";
             
             const standardLogHtml = `<div style="color: ${colorVar}; margin-bottom: 4px;">[${timestamp}] ${text}</div>`;
             consoleEl.innerHTML += standardLogHtml;
@@ -449,13 +510,15 @@
         function initCountdownEngine() {
             clearInterval(countdownInterval);
             
-            // Calculate initial time based on credits
             const credits = parseInt(document.getElementById('creditInput').value) || 0;
             currentTimeRemaining = Math.floor(credits / BURN_RATE);
             
             updateCountdownUI();
 
             countdownInterval = setInterval(() => {
+                // Keep UI locked open but freeze countdown billing during retry drops
+                if (isReconnecting) return;
+
                 currentTimeRemaining--;
                 updateCountdownUI();
 
@@ -491,7 +554,6 @@
             const startBtn = document.getElementById('btnConnect');
             const fullscreenBtn = document.getElementById('launchFullscreen');
             
-            // Enforce max 1000 limit dynamically
             if (parseInt(creditInput.value) > 1000) creditInput.value = 1000;
             const credits = parseInt(creditInput.value) || 0;
 
@@ -505,16 +567,17 @@
                 keyInput.classList.remove('key-valid');
             }
 
-            // Sync projected time immediately as user types credits
-            clearCountdownEngine();
+            // Real-time synchronization calculation
+            if (!realtimeClient && !isReconnecting) {
+                clearCountdownEngine();
+            }
 
-            if(realtimeClient) {
+            if(realtimeClient || isReconnecting) {
                 startBtn.disabled = true;
                 fullscreenBtn.disabled = false; 
             } else {
                 fullscreenBtn.disabled = true;  
-                // Gating logic: Require Key + Image + Credits > 0
-                startBtn.disabled = !(rawKey.length > 0 && fileInput && credits > 0);
+                startBtn.disabled = !(sdkModuleLoaded && rawKey.length > 0 && fileInput && credits > 0);
             }
         }
 
@@ -546,6 +609,7 @@
         }
 
         async function startStream() {
+            if (!sdkModuleLoaded) return;
             let rawKey = document.getElementById('apiKey').value.trim();
             const fileInput = document.getElementById('photoUpload').files[0];
             const credits = parseInt(document.getElementById('creditInput').value) || 0;
@@ -559,7 +623,6 @@
             document.getElementById('btnStop').disabled = false;
             document.getElementById('hudBtnStop').disabled = false;
             
-            // Lock inputs during stream
             document.getElementById('creditInput').disabled = true;
             document.getElementById('resSelect').disabled = true;
             document.getElementById('cameraSelect').disabled = true;
@@ -574,7 +637,8 @@
                             deviceId: camId ? { exact: camId } : undefined,
                             width: { ideal: parseInt(resVal[0]) }, 
                             height: { ideal: parseInt(resVal[1]) },
-                            frameRate: 30 
+                            frameRate: 30,
+                            facingMode: "user" // Formats cleanly to mobile front cameras natively
                         },
                         audio: false
                     };
@@ -588,29 +652,7 @@
                 reader.readAsArrayBuffer(fileInput);
                 reader.onloadend = async () => {
                     const imageBlob = new Blob([reader.result], { type: fileInput.type });
-                    logToConsole("Dispatching secure pipeline matrix (2 cr/sec burn rate)...");
-
-                    realtimeClient = await client.realtime.connect(localStream, {
-                        model: model,
-                        initialState: { prompt: { text: "Transform into this character" }, image: imageBlob },
-                        onRemoteStream: (transformedStream) => {
-                            logToConsole("Pipeline loop linked! Streaming output frames...");
-                            document.getElementById('remoteVideo').srcObject = transformedStream;
-                            document.getElementById('hudRemoteVideo').srcObject = transformedStream;
-                            toggleOperationalState(true);
-                            initCountdownEngine();
-                            document.getElementById('launchFullscreen').disabled = false;
-                        },
-                        onError: (err) => {
-                            logToConsole(`❌ CONNECTION REFUSED: ${err.message}`, true);
-                            alert("Decart Engine Error: " + err.message);
-                            resetPipelineUI();
-                        },
-                        onDisconnect: (reason) => {
-                            logToConsole(`System pipeline cut. Reason: ${reason}`);
-                            resetPipelineUI();
-                        }
-                    });
+                    executePipelineConnection(model, imageBlob);
                 };
             } catch (error) {
                 logToConsole(`Initialization Failed: ${error.message}`, true);
@@ -619,13 +661,79 @@
             }
         }
 
+        // Separate core pipeline execution engine block to facilitate clean loop recovery recursion
+        async function executePipelineConnection(model, imageBlob) {
+            try {
+                realtimeClient = await client.realtime.connect(localStream, {
+                    model: model,
+                    initialState: { prompt: { text: "Transform into this character" }, image: imageBlob },
+                    onRemoteStream: (transformedStream) => {
+                        logToConsole("Pipeline loop linked! Streaming output frames...");
+                        document.getElementById('remoteVideo').srcObject = transformedStream;
+                        document.getElementById('hudRemoteVideo').srcObject = transformedStream;
+                        
+                        reconnectAttempts = 0;
+                        isReconnecting = false;
+                        
+                        toggleOperationalState("live");
+                        initCountdownEngine();
+                        document.getElementById('launchFullscreen').disabled = false;
+                    },
+                    onError: (err) => {
+                        logToConsole(`❌ PIPELINE EXCEPTION: ${err.message}`, true);
+                        handleNetworkDisconnect(model, imageBlob);
+                    },
+                    onDisconnect: (reason) => {
+                        logToConsole(`System pipeline channel severed: ${reason}`);
+                        handleNetworkDisconnect(model, imageBlob);
+                    }
+                });
+            } catch(e) {
+                handleNetworkDisconnect(model, imageBlob);
+            }
+        }
+
+        // [FIX #3]: State Machine Manager to Handle Sudden Disconnects Without UI Resets
+        async function handleNetworkDisconnect(model, imageBlob) {
+            if (isReconnecting) return; 
+            
+            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                isReconnecting = true;
+                toggleOperationalState("reconnecting");
+                
+                let currentDelay = RECONNECT_DELAYS[reconnectAttempts];
+                reconnectAttempts++;
+                
+                logToConsole(`⚠️ Packets dropped. Retry loop running [${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}] in ${currentDelay/1000}s...`, false);
+                
+                setTimeout(async () => {
+                    logToConsole(`🔄 Attempting loop re-entry connection layer...`);
+                    try {
+                        if (realtimeClient) {
+                            await realtimeClient.disconnect().catch(() => {});
+                        }
+                    } catch(err) {}
+                    
+                    executePipelineConnection(model, imageBlob);
+                }, currentDelay);
+            } else {
+                logToConsole("❌ Full fallback exception reached. Executing clean system reset.", true);
+                isReconnecting = false;
+                reconnectAttempts = 0;
+                resetPipelineUI();
+            }
+        }
+
         async function stopStream() {
             logToConsole("Terminating remote loop session context...");
-            if (realtimeClient) await realtimeClient.disconnect();
+            isReconnecting = false;
+            reconnectAttempts = 0;
+            if (realtimeClient) await realtimeClient.disconnect().catch(() => {});
             resetPipelineUI();
         }
 
         function resetPipelineUI() {
+            if (isReconnecting) return;
             clearCountdownEngine();
             realtimeClient = null;
 
@@ -634,15 +742,13 @@
                 localStream = null;
             }
 
-            // Blanks the video elements without closing the HUD
             ['localVideo', 'hudLocalVideo', 'remoteVideo', 'hudRemoteVideo'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.srcObject = null;
             });
             
-            toggleOperationalState(false);
+            toggleOperationalState("idle");
             
-            // Unlock inputs
             document.getElementById('creditInput').disabled = false;
             document.getElementById('resSelect').disabled = false;
             document.getElementById('cameraSelect').disabled = false;
@@ -653,13 +759,25 @@
             logToConsole("Operational interfaces idling. Output monitors completely blanked out.");
         }
 
-        function toggleOperationalState(isLive) {
-            const statusHTML = isLive ? `<span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>LIVE` 
-                                      : `<span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>IDLE`;
+        function toggleOperationalState(state) {
+            let statusHTML = "";
+            let classString = "status-pill";
+            
+            if (state === "live") {
+                classString += " live";
+                statusHTML = `<span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>LIVE`;
+            } else if (state === "reconnecting") {
+                classString += " reconnecting";
+                statusHTML = `<span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>RECONNECTING`;
+            } else {
+                classString += " idle";
+                statusHTML = `<span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>IDLE`;
+            }
+
             ['systemPill', 'hudSystemPill'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
-                    el.className = isLive ? "status-pill live" : "status-pill idle";
+                    el.className = classString;
                     el.innerHTML = statusHTML;
                 }
             });
@@ -672,7 +790,6 @@
             if(content.style.display === "block") {
                 content.style.display = "none";
                 statusIndicator.innerText = "Show Output";
-                document.body.style.overflow = "auto"; 
             } else {
                 content.style.display = "block";
                 statusIndicator.innerText = "Hide Output";
@@ -685,9 +802,35 @@
             logToConsole("System logging registers flushed.");
         }
 
+        // [MOBILE FEATURE]: Native Interface Gating Framework for Seamless Mobile Video Call Mode
         function triggerHUDMode(activate) {
-            document.getElementById('hudOverlay').style.display = activate ? "block" : "none";
-            document.body.style.overflow = activate ? "hidden" : "auto";
+            const overlay = document.getElementById('hudOverlay');
+            if (activate) {
+                overlay.style.display = "block";
+                document.documentElement.style.overflow = "hidden";
+                document.body.style.overflow = "hidden";
+                
+                // Enforces browser element level canvas expansion safely on mobile viewports
+                if (overlay.requestFullscreen) {
+                    overlay.requestFullscreen().catch(() => {});
+                } else if (overlay.webkitRequestFullscreen) {
+                    overlay.webkitRequestFullscreen();
+                } else if (overlay.mozRequestFullScreen) {
+                    overlay.mozRequestFullScreen();
+                } else if (overlay.msRequestFullscreen) {
+                    overlay.msRequestFullscreen();
+                }
+            } else {
+                overlay.style.display = "none";
+                document.documentElement.style.overflow = "auto";
+                document.body.style.overflow = "auto";
+                
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -707,6 +850,12 @@
 
             document.getElementById('launchFullscreen').addEventListener('click', () => triggerHUDMode(true));
             document.getElementById('hudExitBtn').addEventListener('click', () => triggerHUDMode(false));
+
+            // Anti-Elastic Rubber-Banding block for touch scroll events in full screen mode
+            document.getElementById('hudOverlay').addEventListener('touchmove', (e) => {
+                if (e.target.closest('.hud-control-tower')) return;
+                e.preventDefault();
+            }, { passive: false });
         });
     </script>
 </head>
@@ -714,7 +863,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v2.0.0</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v2.1.0</span></h2>
         </div>
         <div class="header-controls">
             <button id="themeToggle" class="theme-toggle">☀️ Light Mode</button>
@@ -814,7 +963,7 @@
                     <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight:600;">CoreSync HUD</div>
-                            <div style="font-size:10px; color:var(--text-secondary);">v2.0.0 Monitor</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">v2.1.0 Monitor</div>
                         </div>
                         <button id="hudExitBtn" style="height: 30px; font-size: 11px; padding: 0 12px; background:var(--bg-surface-hover); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer;">✕ Close</button>
                     </div>
