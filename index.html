@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v2.1.0 by BrainRex</title>
+    <title>CoreSync Studio v2.2.0 by BrainRex</title>
     <style>
         /* Modern UI Design Tokens */
         :root {
@@ -391,6 +391,13 @@
             .studio-header { flex-direction: column; align-items: flex-start; gap: 12px; }
             .header-controls { text-align: left; width: 100%; justify-content: space-between; }
             .panel-grid { flex-direction: column; align-items: stretch; }
+            
+            /* Gating Rule: Eradicates Camera Hardware and Stream Quality fields on mobile views */
+            .panel-grid .form-group:nth-of-type(3),
+            .panel-grid .form-group:nth-of-type(4) {
+                display: none !important;
+            }
+
             .form-group { min-width: 100%; }
             .form-group-actions { justify-content: space-between; }
             .grid { flex-direction: column; gap: 16px; }
@@ -408,7 +415,7 @@
         let sdkModuleLoaded = false;
         let createDecartClient, models;
 
-        // [FIX #1]: Wrapped SDK Import inside Explicit try/catch block to prevent Silent Bricking
+        // Wrapped SDK Import inside Explicit try/catch block to prevent Silent Bricking
         try {
             const sdk = await import("https://esm.sh/@decartai/sdk");
             createDecartClient = sdk.createDecartClient;
@@ -432,7 +439,7 @@
         let currentTimeRemaining = 0; 
         const BURN_RATE = 2; // 2 credits per second
 
-        // [FEATURE]: Resilient State Machine Reconnect Listener System
+        // Resilient State Machine Reconnect Listener System
         let reconnectAttempts = 0;
         let isReconnecting = false;
         const MAX_RECONNECT_ATTEMPTS = 3;
@@ -693,7 +700,7 @@
             }
         }
 
-        // [FIX #3]: State Machine Manager to Handle Sudden Disconnects Without UI Resets
+        // State Machine Manager to Handle Sudden Disconnects Without UI Resets
         async function handleNetworkDisconnect(model, imageBlob) {
             if (isReconnecting) return; 
             
@@ -802,7 +809,7 @@
             logToConsole("System logging registers flushed.");
         }
 
-        // [MOBILE FEATURE]: Native Interface Gating Framework for Seamless Mobile Video Call Mode
+        // Native Interface Gating Framework for Seamless Mobile Video Call Mode
         function triggerHUDMode(activate) {
             const overlay = document.getElementById('hudOverlay');
             if (activate) {
@@ -863,7 +870,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v2.1.0</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v2.2.0</span></h2>
         </div>
         <div class="header-controls">
             <button id="themeToggle" class="theme-toggle">☀️ Light Mode</button>
@@ -963,7 +970,7 @@
                     <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight:600;">CoreSync HUD</div>
-                            <div style="font-size:10px; color:var(--text-secondary);">v2.1.0 Monitor</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">v2.2.0 Monitor</div>
                         </div>
                         <button id="hudExitBtn" style="height: 30px; font-size: 11px; padding: 0 12px; background:var(--bg-surface-hover); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer;">✕ Close</button>
                     </div>
