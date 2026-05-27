@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v2.2.0 by BrainRex</title>
+    <title>CoreSync Studio v2.2.1 by BrainRex</title>
     <style>
         /* Modern UI Design Tokens */
         :root {
@@ -453,6 +453,7 @@
                     .catch(e => console.log(e));
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const camSelect = document.getElementById('cameraSelect');
+                if (!camSelect) return;
                 camSelect.innerHTML = '';
                 
                 let count = 1;
@@ -486,6 +487,7 @@
             });
             
             fetchHardware();
+            startSystemClocks();
         });
 
         function logToConsole(text, isError = false) {
@@ -509,15 +511,18 @@
         function startSystemClocks() {
             setInterval(() => {
                 const now = new Date();
-                document.getElementById('liveDateTime').innerText = `${now.toLocaleDateString()} @ ${now.toLocaleTimeString()}`;
-                document.getElementById('hudLiveDateTime').innerText = `${now.toLocaleDateString()} @ ${now.toLocaleTimeString()}`;
+                const liveDateTime = document.getElementById('liveDateTime');
+                const hudLiveDateTime = document.getElementById('hudLiveDateTime');
+                if (liveDateTime) liveDateTime.innerText = `${now.toLocaleDateString()} @ ${now.toLocaleTimeString()}`;
+                if (hudLiveDateTime) hudLiveDateTime.innerText = `${now.toLocaleDateString()} @ ${now.toLocaleTimeString()}`;
             }, 1000);
         }
 
         function initCountdownEngine() {
             clearInterval(countdownInterval);
             
-            const credits = parseInt(document.getElementById('creditInput').value) || 0;
+            const creditInput = document.getElementById('creditInput');
+            const credits = creditInput ? (parseInt(creditInput.value) || 0) : 0;
             currentTimeRemaining = Math.floor(credits / BURN_RATE);
             
             updateCountdownUI();
@@ -538,7 +543,8 @@
 
         function clearCountdownEngine() {
             clearInterval(countdownInterval);
-            const credits = parseInt(document.getElementById('creditInput').value) || 0;
+            const creditInput = document.getElementById('creditInput');
+            const credits = creditInput ? (parseInt(creditInput.value) || 0) : 0;
             currentTimeRemaining = Math.floor(credits / BURN_RATE);
             updateCountdownUI();
         }
@@ -549,20 +555,26 @@
             const seconds = currentTimeRemaining % 60;
             const formatStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             
-            document.getElementById('sessionCountdown').innerText = formatStr;
-            document.getElementById('hudSessionCountdown').innerText = formatStr;
+            const sessionCountdown = document.getElementById('sessionCountdown');
+            const hudSessionCountdown = document.getElementById('hudSessionCountdown');
+            if (sessionCountdown) sessionCountdown.innerText = formatStr;
+            if (hudSessionCountdown) hudSessionCountdown.innerText = formatStr;
         }
 
         function assessKeyStatus() {
             const keyInput = document.getElementById('apiKey');
+            if (!keyInput) return;
             const rawKey = keyInput.value.trim();
-            const fileInput = document.getElementById('photoUpload').files[0];
+            
+            const photoUpload = document.getElementById('photoUpload');
+            const fileInput = photoUpload ? photoUpload.files[0] : null;
+            
             const creditInput = document.getElementById('creditInput');
             const startBtn = document.getElementById('btnConnect');
             const fullscreenBtn = document.getElementById('launchFullscreen');
             
-            if (parseInt(creditInput.value) > 1000) creditInput.value = 1000;
-            const credits = parseInt(creditInput.value) || 0;
+            if (creditInput && parseInt(creditInput.value) > 1000) creditInput.value = 1000;
+            const credits = creditInput ? (parseInt(creditInput.value) || 0) : 0;
 
             if (rawKey.length === 0) {
                 keyInput.classList.remove('key-valid', 'key-invalid');
@@ -580,11 +592,11 @@
             }
 
             if(realtimeClient || isReconnecting) {
-                startBtn.disabled = true;
-                fullscreenBtn.disabled = false; 
+                if (startBtn) startBtn.disabled = true;
+                if (fullscreenBtn) fullscreenBtn.disabled = false; 
             } else {
-                fullscreenBtn.disabled = true;  
-                startBtn.disabled = !(sdkModuleLoaded && rawKey.length > 0 && fileInput && credits > 0);
+                if (fullscreenBtn) fullscreenBtn.disabled = true;  
+                if (startBtn) startBtn.disabled = !(sdkModuleLoaded && rawKey.length > 0 && fileInput && credits > 0);
             }
         }
 
@@ -598,41 +610,53 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    mainThumb.src = e.target.result;
-                    mainThumb.style.display = 'block';
-                    placeholderText.style.display = 'none';
-                    if(hudThumb) { hudThumb.src = e.target.result; hudThumb.style.display = 'block'; }
-                    if(hudPlaceholderText) hudPlaceholderText.style.display = 'none';
+                    if (mainThumb) { mainThumb.src = e.target.result; mainThumb.style.display = 'block'; }
+                    if (placeholderText) placeholderText.style.display = 'none';
+                    if (hudThumb) { hudThumb.src = e.target.result; hudThumb.style.display = 'block'; }
+                    if (hudPlaceholderText) hudPlaceholderText.style.display = 'none';
                     assessKeyStatus();
                 };
                 reader.readAsDataURL(file);
             } else {
-                mainThumb.style.display = 'none';
-                placeholderText.style.display = 'block';
-                if(hudThumb) { hudThumb.src = ''; hudThumb.style.display = 'none'; }
-                if(hudPlaceholderText) hudPlaceholderText.style.display = 'block';
+                if (mainThumb) mainThumb.style.display = 'none';
+                if (placeholderText) placeholderText.style.display = 'block';
+                if (hudThumb) { hudThumb.src = ''; hudThumb.style.display = 'none'; }
+                if (hudPlaceholderText) hudPlaceholderText.style.display = 'block';
                 assessKeyStatus();
             }
         }
 
         async function startStream() {
             if (!sdkModuleLoaded) return;
-            let rawKey = document.getElementById('apiKey').value.trim();
-            const fileInput = document.getElementById('photoUpload').files[0];
-            const credits = parseInt(document.getElementById('creditInput').value) || 0;
-            const camId = document.getElementById('cameraSelect').value;
-            const resVal = document.getElementById('resSelect').value.split('x');
+            const apiKeyEl = document.getElementById('apiKey');
+            let rawKey = apiKeyEl ? apiKeyEl.value.trim() : '';
+            
+            const photoUpload = document.getElementById('photoUpload');
+            const fileInput = photoUpload ? photoUpload.files[0] : null;
+            
+            const creditInput = document.getElementById('creditInput');
+            const credits = creditInput ? (parseInt(creditInput.value) || 0) : 0;
+            
+            const cameraSelect = document.getElementById('cameraSelect');
+            const camId = cameraSelect ? cameraSelect.value : '';
+            
+            const resSelect = document.getElementById('resSelect');
+            const resVal = resSelect ? resSelect.value.split('x') : ['1280', '720'];
 
             if (!rawKey || !fileInput || credits <= 0) return;
 
             logToConsole(`Compiling session assets at ${resVal[0]}x${resVal[1]}...`);
-            document.getElementById('btnConnect').disabled = true;
-            document.getElementById('btnStop').disabled = false;
-            document.getElementById('hudBtnStop').disabled = false;
+            const btnConnect = document.getElementById('btnConnect');
+            const btnStop = document.getElementById('btnStop');
+            const hudBtnStop = document.getElementById('hudBtnStop');
             
-            document.getElementById('creditInput').disabled = true;
-            document.getElementById('resSelect').disabled = true;
-            document.getElementById('cameraSelect').disabled = true;
+            if (btnConnect) btnConnect.disabled = true;
+            if (btnStop) btnStop.disabled = false;
+            if (hudBtnStop) hudBtnStop.disabled = false;
+            
+            if (creditInput) creditInput.disabled = true;
+            if (resSelect) resSelect.disabled = true;
+            if (cameraSelect) cameraSelect.disabled = true;
 
             try {
                 client = createDecartClient({ apiKey: rawKey, baseUrl: "wss://api3.decart.ai" });
@@ -650,8 +674,10 @@
                         audio: false
                     };
                     localStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    document.getElementById('localVideo').srcObject = localStream;
-                    document.getElementById('hudLocalVideo').srcObject = localStream;
+                    const localVideo = document.getElementById('localVideo');
+                    const hudLocalVideo = document.getElementById('hudLocalVideo');
+                    if (localVideo) localVideo.srcObject = localStream;
+                    if (hudLocalVideo) hudLocalVideo.srcObject = localStream;
                     logToConsole("Hardware device linked and quality constraints applied.");
                 }
 
@@ -676,15 +702,18 @@
                     initialState: { prompt: { text: "Transform into this character" }, image: imageBlob },
                     onRemoteStream: (transformedStream) => {
                         logToConsole("Pipeline loop linked! Streaming output frames...");
-                        document.getElementById('remoteVideo').srcObject = transformedStream;
-                        document.getElementById('hudRemoteVideo').srcObject = transformedStream;
+                        const remoteVideo = document.getElementById('remoteVideo');
+                        const hudRemoteVideo = document.getElementById('hudRemoteVideo');
+                        if (remoteVideo) remoteVideo.srcObject = transformedStream;
+                        if (hudRemoteVideo) hudRemoteVideo.srcObject = transformedStream;
                         
                         reconnectAttempts = 0;
                         isReconnecting = false;
                         
                         toggleOperationalState("live");
                         initCountdownEngine();
-                        document.getElementById('launchFullscreen').disabled = false;
+                        const launchFullscreen = document.getElementById('launchFullscreen');
+                        if (launchFullscreen) launchFullscreen.disabled = false;
                     },
                     onError: (err) => {
                         logToConsole(`❌ PIPELINE EXCEPTION: ${err.message}`, true);
@@ -756,13 +785,19 @@
             
             toggleOperationalState("idle");
             
-            document.getElementById('creditInput').disabled = false;
-            document.getElementById('resSelect').disabled = false;
-            document.getElementById('cameraSelect').disabled = false;
+            const creditInput = document.getElementById('creditInput');
+            const resSelect = document.getElementById('resSelect');
+            const cameraSelect = document.getElementById('cameraSelect');
+            const btnStop = document.getElementById('btnStop');
+            const hudBtnStop = document.getElementById('hudBtnStop');
+            
+            if (creditInput) creditInput.disabled = false;
+            if (resSelect) resSelect.disabled = false;
+            if (cameraSelect) cameraSelect.disabled = false;
             
             assessKeyStatus(); 
-            document.getElementById('btnStop').disabled = true;
-            document.getElementById('hudBtnStop').disabled = true;
+            if (btnStop) btnStop.disabled = true;
+            if (hudBtnStop) hudBtnStop.disabled = true;
             logToConsole("Operational interfaces idling. Output monitors completely blanked out.");
         }
 
@@ -793,6 +828,7 @@
         function toggleConsoleCollapsible() {
             const content = document.getElementById('consoleContent');
             const statusIndicator = document.getElementById('consoleToggleStatus');
+            if (!content || !statusIndicator) return;
             
             if(content.style.display === "block") {
                 content.style.display = "none";
@@ -804,14 +840,17 @@
         }
 
         function clearLogBuffer() {
-            document.getElementById('sysConsole').innerHTML = "";
-            if(document.getElementById('hudMiniConsole')) document.getElementById('hudMiniConsole').innerHTML = "";
+            const sysConsole = document.getElementById('sysConsole');
+            const hudMiniConsole = document.getElementById('hudMiniConsole');
+            if(sysConsole) sysConsole.innerHTML = "";
+            if(hudMiniConsole) hudMiniConsole.innerHTML = "";
             logToConsole("System logging registers flushed.");
         }
 
         // Native Interface Gating Framework for Seamless Mobile Video Call Mode
         function triggerHUDMode(activate) {
             const overlay = document.getElementById('hudOverlay');
+            if (!overlay) return;
             if (activate) {
                 overlay.style.display = "block";
                 document.documentElement.style.overflow = "hidden";
@@ -841,25 +880,24 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            startSystemClocks();
             assessKeyStatus(); 
 
-            document.getElementById('btnConnect').addEventListener('click', startStream);
-            document.getElementById('btnStop').addEventListener('click', stopStream);
-            document.getElementById('hudBtnStop').addEventListener('click', stopStream);
+            document.getElementById('btnConnect')?.addEventListener('click', startStream);
+            document.getElementById('btnStop')?.addEventListener('click', stopStream);
+            document.getElementById('hudBtnStop')?.addEventListener('click', stopStream);
             
-            document.getElementById('apiKey').addEventListener('input', assessKeyStatus);
-            document.getElementById('creditInput').addEventListener('input', assessKeyStatus);
-            document.getElementById('photoUpload').addEventListener('change', handleImageSync);
+            document.getElementById('apiKey')?.addEventListener('input', assessKeyStatus);
+            document.getElementById('creditInput')?.addEventListener('input', assessKeyStatus);
+            document.getElementById('photoUpload')?.addEventListener('change', handleImageSync);
             
-            document.getElementById('consoleHeader').addEventListener('click', toggleConsoleCollapsible);
-            document.getElementById('btnClearLog').addEventListener('click', clearLogBuffer);
+            document.getElementById('consoleHeader')?.addEventListener('click', toggleConsoleCollapsible);
+            document.getElementById('btnClearLog')?.addEventListener('click', clearLogBuffer);
 
-            document.getElementById('launchFullscreen').addEventListener('click', () => triggerHUDMode(true));
-            document.getElementById('hudExitBtn').addEventListener('click', () => triggerHUDMode(false));
+            document.getElementById('launchFullscreen')?.addEventListener('click', () => triggerHUDMode(true));
+            document.getElementById('hudExitBtn')?.addEventListener('click', () => triggerHUDMode(false));
 
             // Anti-Elastic Rubber-Banding block for touch scroll events in full screen mode
-            document.getElementById('hudOverlay').addEventListener('touchmove', (e) => {
+            document.getElementById('hudOverlay')?.addEventListener('touchmove', (e) => {
                 if (e.target.closest('.hud-control-tower')) return;
                 e.preventDefault();
             }, { passive: false });
@@ -870,7 +908,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v2.2.0</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v2.2.1</span></h2>
         </div>
         <div class="header-controls">
             <button id="themeToggle" class="theme-toggle">☀️ Light Mode</button>
@@ -970,7 +1008,7 @@
                     <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight:600;">CoreSync HUD</div>
-                            <div style="font-size:10px; color:var(--text-secondary);">v2.2.0 Monitor</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">v2.2.1 Monitor</div>
                         </div>
                         <button id="hudExitBtn" style="height: 30px; font-size: 11px; padding: 0 12px; background:var(--bg-surface-hover); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer;">✕ Close</button>
                     </div>
