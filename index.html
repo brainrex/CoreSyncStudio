@@ -322,7 +322,7 @@
         .hud-main-output { width: 100%; height: 100%; background: #000; }
         .hud-main-output video { width: 100%; height: 100%; object-fit: contain; }
 
-        /* Responsive HUD Overlay Parameters */
+        /* Fullscreen Overlay Parameters - Fixed at the bottom */
         .hud-watermark-timer {
             position: absolute;
             bottom: clamp(20px, 5vh, 40px);
@@ -354,7 +354,7 @@
         .hud-btn-close:hover { background: rgba(255, 255, 255, 0.25); }
         .hud-btn-stop-floating { background: #ef4444; color: #ffffff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4); }
 
-        /* 📟 Tablet View UI Scaling (Breakpoints for iPads and Tablets) */
+        /* 📟 Tablet View UI Scaling */
         @media (min-width: 769px) and (max-width: 1024px) {
             body { padding: 24px; }
             .panel-grid { gap: 14px; }
@@ -363,12 +363,12 @@
             .box { width: 100%; }
             .video-container { aspect-ratio: 16/10; }
             
-            /* Anti-Collision Corner Boxing Rule for Tablet HUD */
+            /* Keeps Timer on the bottom left for Tablets */
             .hud-watermark-timer {
-                bottom: auto;
-                top: 24px;
-                right: 24px;
-                left: auto;
+                bottom: 24px;
+                left: 24px;
+                top: auto;
+                right: auto;
                 padding: 8px 16px;
             }
             .hud-floating-actions {
@@ -397,12 +397,12 @@
             .video-container { aspect-ratio: 11/14; }
             .hud-main-output video { object-fit: cover; }
             
-            /* Anti-Collision Corner Boxing Rule for Mobile Phone HUD */
+            /* Keeps Timer on the bottom left for Mobile Phones */
             .hud-watermark-timer {
-                bottom: auto;
-                top: calc(12px + env(safe-area-inset-top));
-                right: 16px;
-                left: auto;
+                bottom: calc(12px + env(safe-area-inset-bottom));
+                left: 16px;
+                top: auto;
+                right: auto;
                 padding: 6px 14px;
             }
             .hud-floating-actions {
@@ -620,6 +620,7 @@
             const systemPill = document.getElementById('systemPill');
             if (systemPill) { systemPill.className = "status-pill idle"; systemPill.innerText = "IDLE"; }
 
+            // 🛠️ Force stop buttons to drop active state immediately
             document.getElementById('btnStop').disabled = true;
             document.getElementById('hudBtnStop').disabled = true;
             
@@ -644,7 +645,7 @@
             document.getElementById('btnStop')?.addEventListener('click', stopStream);
             document.getElementById('hudBtnStop')?.addEventListener('click', stopStream);
             
-            // 🔑 Case-correction parser logic matching image_22.png validation rule parameters
+            // 🔑 Case-correction parser logic
             document.getElementById('apiKey')?.addEventListener('input', (e) => {
                 let val = e.target.value;
                 if (val.startsWith('D')) {
@@ -772,6 +773,7 @@
         </div>
     </div>
 
+    <!-- HUD Overlay Viewport Frame -->
     <div id="hudOverlay" class="hud-fullscreen-overlay">
         <div class="hud-layout">
             <div class="hud-main-output">
