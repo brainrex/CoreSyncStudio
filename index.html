@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v3.0 by BrainRex</title>
+    <title>CoreSync Studio v3.1 by BrainRex</title>
     <style>
         /* Liquid Glass Dynamic Design Tokens */
         :root {
@@ -354,31 +354,68 @@
         .hud-btn-close:hover { background: rgba(255, 255, 255, 0.25); }
         .hud-btn-stop-floating { background: #ef4444; color: #ffffff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4); }
 
-        /* 📱 Android Layout Optimization Rules */
+        /* 📟 Tablet View UI Scaling (Breakpoints for iPads and Tablets) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            body { padding: 24px; }
+            .panel-grid { gap: 14px; }
+            .form-group.hide-on-mobile-tablet { display: none !important; }
+            .grid { flex-direction: column; gap: 20px; }
+            .box { width: 100%; }
+            .video-container { aspect-ratio: 16/10; }
+            
+            /* Anti-Collision Corner Boxing Rule for Tablet HUD */
+            .hud-watermark-timer {
+                bottom: auto;
+                top: 24px;
+                right: 24px;
+                left: auto;
+                padding: 8px 16px;
+            }
+            .hud-floating-actions {
+                bottom: 24px;
+                right: 24px;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .hud-btn-action {
+                width: 160px;
+                height: 40px;
+                justify-content: center;
+            }
+        }
+
+        /* 📱 Android/iOS Phone View Optimization Rules */
         @media (max-width: 768px) {
             body { padding: 16px; }
             .studio-header { flex-direction: column; align-items: flex-start; gap: 14px; }
             .header-controls { text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center; }
             .panel-grid { flex-direction: column; align-items: stretch; gap: 16px; }
             .form-group { min-width: 100%; }
+            .form-group.hide-on-mobile-tablet { display: none !important; }
             .grid { flex-direction: column; gap: 16px; }
             .box { width: 100%; box-sizing: border-box; }
             .video-container { aspect-ratio: 11/14; }
             .hud-main-output video { object-fit: cover; }
             
-            /* Responsive UI Anti-Collision stacking rules */
+            /* Anti-Collision Corner Boxing Rule for Mobile Phone HUD */
             .hud-watermark-timer {
-                bottom: calc(10px + env(safe-area-inset-bottom));
-                left: 16px;
+                bottom: auto;
+                top: calc(12px + env(safe-area-inset-top));
+                right: 16px;
+                left: auto;
                 padding: 6px 14px;
             }
             .hud-floating-actions {
-                bottom: calc(10px + env(safe-area-inset-bottom));
+                bottom: calc(12px + env(safe-area-inset-bottom));
                 right: 16px;
+                flex-direction: column;
+                gap: 8px;
             }
             .hud-btn-action {
+                width: 140px;
                 height: 36px;
                 padding: 0 14px;
+                justify-content: center;
             }
         }
     </style>
@@ -400,7 +437,7 @@
                 createDecartClient = sdk.createDecartClient;
                 models = sdk.models;
                 sdkModuleLoaded = true;
-                console.log("[OK] Decart Core Module Framework compiled safely under v3.0 specs.");
+                console.log("[OK] Decart Core Module Framework compiled safely under v3.1 specs.");
             } catch (sdkError) {
                 logToConsole("❌ SDK Error: Unable to fetch cloud stream wrappers.", true);
             }
@@ -654,7 +691,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v3.0</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v3.1</span></h2>
             <span class="studio-subtitle">by Brain Moth3rfucking Rex</span>
         </div>
         <div class="header-controls">
@@ -679,13 +716,13 @@
                 <label>Credits (Max 1000)</label>
                 <input type="number" id="creditInput" placeholder="1000" min="0" max="1000" value="1000">
             </div>
-            <div class="form-group hide-on-mobile">
+            <div class="form-group hide-on-mobile-tablet">
                 <label>Camera Hardware</label>
                 <select id="cameraSelect">
                     <option value="">Detecting...</option>
                 </select>
             </div>
-            <div class="form-group hide-on-mobile">
+            <div class="form-group hide-on-mobile-tablet">
                 <label>Stream Quality</label>
                 <select id="resSelect">
                     <option value="1280x720">720p (High)</option>
@@ -731,11 +768,10 @@
             <span style="font-size: 11px; font-weight:600; color:var(--text-secondary);">Toggle Output</span>
         </div>
         <div class="console-content" id="consoleContent">
-            <div class="console" id="sysConsole">CoreSync system diagnostics initialized for production v3.0...</div>
+            <div class="console" id="sysConsole">CoreSync system diagnostics initialized for production v3.1...</div>
         </div>
     </div>
 
-    <!-- HUD Overlay Viewport Frame -->
     <div id="hudOverlay" class="hud-fullscreen-overlay">
         <div class="hud-layout">
             <div class="hud-main-output">
