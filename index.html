@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v2.2.2 by BrainRex</title>
+    <title>CoreSync Studio v2.2.3 by BrainRex</title>
     <style>
         /* Modern UI Design Tokens */
         :root {
@@ -415,7 +415,7 @@
         let sdkModuleLoaded = false;
         let createDecartClient, models;
         let client;
-        let realtimeClient;
+        let realtimeClient = null;
         let localStream;
         
         let countdownInterval = null;
@@ -680,6 +680,12 @@
 
         async function executePipelineConnection(model, imageBlob) {
             try {
+                // Ensure any leftover instance is completely torn down before binding a new socket
+                if (realtimeClient) {
+                    await realtimeClient.disconnect().catch(() => {});
+                    realtimeClient = null;
+                }
+
                 realtimeClient = await client.realtime.connect(localStream, {
                     model: model,
                     initialState: { prompt: { text: "Transform into this character" }, image: imageBlob },
@@ -699,21 +705,31 @@
                         if (launchFullscreen) launchFullscreen.disabled = false;
                     },
                     onError: (err) => {
-                        logToConsole(`❌ PIPELINE EXCEPTION: ${err.message}`, true);
-                        handleNetworkDisconnect(model, imageBlob);
+                        logToConsole(`❌ Pipeline Exception: ${err.message}`, true);
+                        // Only retry if it wasn't an explicit authentication failure
+                        if (!err.message.includes("401") && !err.message.includes("Unauthorized")) {
+                            handleNetworkDisconnect(model, imageBlob);
+                        } else {
+                            stopStream();
+                        }
                     },
                     onDisconnect: (reason) => {
-                        logToConsole(`System pipeline channel severed: ${reason}`);
-                        handleNetworkDisconnect(model, imageBlob);
+                        // Prevent triggering reconnect if the user intentionally pressed "Stop"
+                        if (realtimeClient !== null && !isReconnecting) {
+                            logToConsole(`System pipeline channel severed: ${reason}`);
+                            handleNetworkDisconnect(model, imageBlob);
+                        }
                     }
                 });
             } catch(e) {
+                logToConsole(`Connection pipeline establishment failed: ${e.message}`, true);
                 handleNetworkDisconnect(model, imageBlob);
             }
         }
 
         async function handleNetworkDisconnect(model, imageBlob) {
-            if (isReconnecting) return; 
+            // Prevent stacking multiple parallel retry loops
+            if (isReconnecting && reconnectAttempts > 0) return; 
             
             if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                 isReconnecting = true;
@@ -729,6 +745,7 @@
                     try {
                         if (realtimeClient) {
                             await realtimeClient.disconnect().catch(() => {});
+                            realtimeClient = null;
                         }
                     } catch(err) {}
                     
@@ -739,6 +756,7 @@
                 isReconnecting = false;
                 reconnectAttempts = 0;
                 resetPipelineUI();
+                alert("Stream connection lost. Please check your stream key/network connection and try again.");
             }
         }
 
@@ -889,7 +907,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v2.2.2</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v2.2.3</span></h2>
         </div>
         <div class="header-controls">
             <button id="themeToggle" class="theme-toggle">☀️ Light Mode</button>
@@ -989,7 +1007,7 @@
                     <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight:600;">CoreSync HUD</div>
-                            <div style="font-size:10px; color:var(--text-secondary);">v2.2.2 Monitor</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">v2.2.3 Monitor</div>
                         </div>
                         <button id="hudExitBtn" style="height: 30px; font-size: 11px; padding: 0 12px; background:var(--bg-surface-hover); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer;">✕ Close</button>
                     </div>
