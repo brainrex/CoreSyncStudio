@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v2.2.3 by BrainRex</title>
+    <title>CoreSync Studio v2.2.4 by BrainRex</title>
     <style>
         /* Modern UI Design Tokens */
         :root {
@@ -339,50 +339,92 @@
         }
         .btn-clear-log:hover { background: var(--bg-surface-hover); }
 
-        /* True Mobile Fullscreen Engine */
+        /* Re-engineered Fully Immersive Mobile Fullscreen HUD Overlay */
         .hud-fullscreen-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             background: #000;
             z-index: 99999;
-            box-sizing: border-box;
-            font-family: var(--font-family);
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
         }
-        .hud-layout { display: flex; width: 100%; height: 100%; }
+        .hud-layout { 
+            position: relative;
+            width: 100%; 
+            height: 100%; 
+        }
         .hud-main-output {
-            width: 80%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            border-right: 1px solid var(--border-color);
-            background: #050505;
+            width: 100%; 
+            height: 100%;
+            background: #000;
             position: relative;
         }
-        .hud-main-output video { width: 100%; height: 100%; object-fit: cover; }
-        .hud-control-tower {
-            width: 20%; height: 100%;
-            background: var(--bg-base);
-            padding: 24px;
-            box-sizing: border-box;
-            display: flex; flex-direction: column; justify-content: space-between;
-            overflow-y: auto;
-            color: var(--text-primary);
+        .hud-main-output video { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
         }
-        .hud-section {
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 16px; margin-bottom: 16px;
+
+        /* Watermark Timer layout at the Bottom Left Corner */
+        .hud-watermark-timer {
+            position: absolute;
+            bottom: max(30px, env(safe-area-inset-bottom));
+            left: 24px;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100000;
+            pointer-events: none;
         }
-        .hud-section:last-child { border-bottom: none; }
-        .hud-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-        .hud-value { font-size: 18px; font-weight: 600; }
-        .hud-mirror-video { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-md); object-fit: cover; }
-        .hud-thumbnail-img { width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-md); display: none; }
-        .hud-mini-log {
-            height: 120px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-md);
-            font-size: 10px; font-family: ui-monospace, monospace; padding: 10px; overflow-y: auto; color: var(--text-secondary);
+        .hud-watermark-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .hud-watermark-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            font-family: ui-monospace, monospace;
+        }
+
+        /* Floating Action Buttons directly at the Bottom Right Corner */
+        .hud-floating-actions {
+            position: absolute;
+            bottom: max(24px, env(safe-area-inset-bottom));
+            right: 24px;
+            display: flex;
+            gap: 12px;
+            z-index: 100000;
+        }
+        .hud-btn-action {
+            height: 40px;
+            padding: 0 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 13px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        }
+        .hud-btn-close {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .hud-btn-stop-floating {
+            background: var(--danger);
+            color: #ffffff;
+        }
+        .hud-btn-stop-floating:hover:not(:disabled) {
+            background: var(--danger-hover);
         }
 
         /* Mobile Breakpoint Adapters */
@@ -403,11 +445,6 @@
             .grid { flex-direction: column; gap: 16px; }
             .box { width: 100%; box-sizing: border-box; }
             .video-container { aspect-ratio: 11/14; } /* Immersive Vertical Feed for Mobile Screen Ratio */
-            .hud-layout { flex-direction: column-reverse; }
-            .hud-main-output { width: 100%; height: 70%; }
-            .hud-control-tower { width: 100%; height: 30%; padding: 12px; }
-            .hud-section { padding-bottom: 8px; margin-bottom: 8px; }
-            .hud-mirror-video, .hud-section:nth-child(4), .hud-section:nth-child(5) { display: none; }
         }
     </style>
     
@@ -442,7 +479,6 @@
                 if (startBtn) startBtn.disabled = true;
             }
 
-            // Run structural startup bindings smoothly
             fetchHardware();
             startSystemClocks();
             assessKeyStatus();
@@ -478,7 +514,6 @@
 
         function logToConsole(text, isError = false) {
             const consoleEl = document.getElementById('sysConsole');
-            const hudConsoleEl = document.getElementById('hudMiniConsole');
             if(!consoleEl) return;
             const timestamp = new Date().toLocaleTimeString();
             let colorVar = isError ? "var(--danger)" : "var(--accent-primary)";
@@ -487,20 +522,13 @@
             const standardLogHtml = `<div style="color: ${colorVar}; margin-bottom: 4px;">[${timestamp}] ${text}</div>`;
             consoleEl.innerHTML += standardLogHtml;
             consoleEl.scrollTop = consoleEl.scrollHeight;
-
-            if(hudConsoleEl) {
-                hudConsoleEl.innerHTML += standardLogHtml;
-                hudConsoleEl.scrollTop = hudConsoleEl.scrollHeight;
-            }
         }
 
         function startSystemClocks() {
             setInterval(() => {
                 const now = new Date();
                 const liveDateTime = document.getElementById('liveDateTime');
-                const hudLiveDateTime = document.getElementById('hudLiveDateTime');
                 if (liveDateTime) liveDateTime.innerText = `${now.toLocaleDateString()} @ ${now.toLocaleTimeString()}`;
-                if (hudLiveDateTime) hudLiveDateTime.innerText = `${now.toLocaleDateString()} @ ${now.toLocaleTimeString()}`;
             }, 1000);
         }
 
@@ -527,10 +555,8 @@
         }
 
         function clearCountdownEngine() {
+            // Clears interval cleanly to freeze the timer exactly where it is!
             clearInterval(countdownInterval);
-            const creditInput = document.getElementById('creditInput');
-            const credits = creditInput ? (parseInt(creditInput.value) || 0) : 0;
-            currentTimeRemaining = Math.floor(credits / BURN_RATE);
             updateCountdownUI();
         }
 
@@ -571,10 +597,6 @@
                 keyInput.classList.remove('key-valid');
             }
 
-            if (!realtimeClient && !isReconnecting) {
-                clearCountdownEngine();
-            }
-
             if(realtimeClient || isReconnecting) {
                 if (startBtn) startBtn.disabled = true;
                 if (fullscreenBtn) fullscreenBtn.disabled = false; 
@@ -588,30 +610,31 @@
             const file = event.target.files[0];
             const mainThumb = document.getElementById('mainThumb');
             const placeholderText = document.getElementById('thumbPlaceholder');
-            const hudThumb = document.getElementById('hudThumb');
-            const hudPlaceholderText = document.getElementById('hudThumbPlaceholder');
 
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     if (mainThumb) { mainThumb.src = e.target.result; mainThumb.style.display = 'block'; }
                     if (placeholderText) placeholderText.style.display = 'none';
-                    if (hudThumb) { hudThumb.src = e.target.result; hudThumb.style.display = 'block'; }
-                    if (hudPlaceholderText) hudPlaceholderText.style.display = 'none';
                     assessKeyStatus();
                 };
                 reader.readAsDataURL(file);
             } else {
                 if (mainThumb) mainThumb.style.display = 'none';
                 if (placeholderText) placeholderText.style.display = 'block';
-                if (hudThumb) { hudThumb.src = ''; hudThumb.style.display = 'none'; }
-                if (hudPlaceholderText) hudPlaceholderText.style.display = 'block';
                 assessKeyStatus();
             }
         }
 
         async function startStream() {
             if (!sdkModuleLoaded) return;
+            
+            // Hard reset the socket layers first to flush previous run buffers
+            if (realtimeClient) {
+                await realtimeClient.disconnect().catch(() => {});
+                realtimeClient = null;
+            }
+
             const apiKeyEl = document.getElementById('apiKey');
             let rawKey = apiKeyEl ? apiKeyEl.value.trim() : '';
             
@@ -659,9 +682,7 @@
                     };
                     localStream = await navigator.mediaDevices.getUserMedia(constraints);
                     const localVideo = document.getElementById('localVideo');
-                    const hudLocalVideo = document.getElementById('hudLocalVideo');
                     if (localVideo) localVideo.srcObject = localStream;
-                    if (hudLocalVideo) hudLocalVideo.srcObject = localStream;
                     logToConsole("Hardware device linked and quality constraints applied.");
                 }
 
@@ -680,7 +701,6 @@
 
         async function executePipelineConnection(model, imageBlob) {
             try {
-                // Ensure any leftover instance is completely torn down before binding a new socket
                 if (realtimeClient) {
                     await realtimeClient.disconnect().catch(() => {});
                     realtimeClient = null;
@@ -706,7 +726,6 @@
                     },
                     onError: (err) => {
                         logToConsole(`❌ Pipeline Exception: ${err.message}`, true);
-                        // Only retry if it wasn't an explicit authentication failure
                         if (!err.message.includes("401") && !err.message.includes("Unauthorized")) {
                             handleNetworkDisconnect(model, imageBlob);
                         } else {
@@ -714,7 +733,6 @@
                         }
                     },
                     onDisconnect: (reason) => {
-                        // Prevent triggering reconnect if the user intentionally pressed "Stop"
                         if (realtimeClient !== null && !isReconnecting) {
                             logToConsole(`System pipeline channel severed: ${reason}`);
                             handleNetworkDisconnect(model, imageBlob);
@@ -728,7 +746,6 @@
         }
 
         async function handleNetworkDisconnect(model, imageBlob) {
-            // Prevent stacking multiple parallel retry loops
             if (isReconnecting && reconnectAttempts > 0) return; 
             
             if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
@@ -764,13 +781,16 @@
             logToConsole("Terminating remote loop session context...");
             isReconnecting = false;
             reconnectAttempts = 0;
+            
+            // Instantly freeze countdown timer right where it stands
+            clearCountdownEngine();
+            
             if (realtimeClient) await realtimeClient.disconnect().catch(() => {});
             resetPipelineUI();
         }
 
         function resetPipelineUI() {
             if (isReconnecting) return;
-            clearCountdownEngine();
             realtimeClient = null;
 
             if (localStream) {
@@ -778,10 +798,14 @@
                 localStream = null;
             }
 
-            ['localVideo', 'hudLocalVideo', 'remoteVideo', 'hudRemoteVideo'].forEach(id => {
+            ['localVideo', 'remoteVideo'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.srcObject = null;
             });
+            
+            // Keep Fullscreen components contextually bound but streamless on manual drop
+            const hudRemoteVideo = document.getElementById('hudRemoteVideo');
+            if (hudRemoteVideo) hudRemoteVideo.srcObject = null;
             
             toggleOperationalState("idle");
             
@@ -816,13 +840,11 @@
                 statusHTML = `<span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>IDLE`;
             }
 
-            ['systemPill', 'hudSystemPill'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.className = classString;
-                    el.innerHTML = statusHTML;
-                }
-            });
+            const systemPill = document.getElementById('systemPill');
+            if (systemPill) {
+                systemPill.className = classString;
+                systemPill.innerHTML = statusHTML;
+            }
         }
 
         function toggleConsoleCollapsible() {
@@ -841,9 +863,7 @@
 
         function clearLogBuffer() {
             const sysConsole = document.getElementById('sysConsole');
-            const hudMiniConsole = document.getElementById('hudMiniConsole');
             if(sysConsole) sysConsole.innerHTML = "";
-            if(hudMiniConsole) hudMiniConsole.innerHTML = "";
             logToConsole("System logging registers flushed.");
         }
 
@@ -878,7 +898,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Setup DOM event connections safely first
             document.getElementById('btnConnect')?.addEventListener('click', startStream);
             document.getElementById('btnStop')?.addEventListener('click', stopStream);
             document.getElementById('hudBtnStop')?.addEventListener('click', stopStream);
@@ -894,11 +913,10 @@
             document.getElementById('hudExitBtn')?.addEventListener('click', () => triggerHUDMode(false));
 
             document.getElementById('hudOverlay')?.addEventListener('touchmove', (e) => {
-                if (e.target.closest('.hud-control-tower')) return;
+                if (e.target.closest('.hud-floating-actions')) return;
                 e.preventDefault();
             }, { passive: false });
 
-            // Launch safe application loader initialization 
             initApp();
         });
     </script>
@@ -907,7 +925,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v2.2.3</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v2.2.4</span></h2>
         </div>
         <div class="header-controls">
             <button id="themeToggle" class="theme-toggle">☀️ Light Mode</button>
@@ -1002,56 +1020,14 @@
                 <video id="hudRemoteVideo" autoplay playsinline></video>
             </div>
             
-            <div class="hud-control-tower">
-                <div>
-                    <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight:600;">CoreSync HUD</div>
-                            <div style="font-size:10px; color:var(--text-secondary);">v2.2.3 Monitor</div>
-                        </div>
-                        <button id="hudExitBtn" style="height: 30px; font-size: 11px; padding: 0 12px; background:var(--bg-surface-hover); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer;">✕ Close</button>
-                    </div>
+            <div class="hud-watermark-timer">
+                <span class="hud-watermark-label">Time Remaining</span>
+                <span class="hud-watermark-value" id="hudSessionCountdown">0:00</span>
+            </div>
 
-                    <div class="hud-section">
-                        <span class="hud-label">Status</span>
-                        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
-                            <span class="status-pill idle" id="hudSystemPill">
-                                <span style="display:inline-block; width:8px; height:8px; background:currentColor; border-radius:50%; margin-right:4px;"></span>IDLE
-                            </span>
-                            <button id="hudBtnStop" class="btn-shutdown" style="flex-grow: 1; height: 32px; font-size: 12px;" disabled>Stop Stream</button>
-                        </div>
-                    </div>
-
-                    <div class="hud-section">
-                        <span class="hud-label">Time Remaining</span>
-                        <span class="hud-value" id="hudSessionCountdown" style="color: var(--danger); font-family: ui-monospace, monospace;">0:00</span>
-                    </div>
-
-                    <div class="hud-section">
-                        <span class="hud-label">System Time</span>
-                        <div id="hudLiveDateTime" style="font-size: 12px;">--/--/---- --:--:--</div>
-                    </div>
-
-                    <div class="hud-section">
-                        <span class="hud-label">Reference</span>
-                        <div style="margin-top:8px;">
-                            <img id="hudThumb" class="hud-thumbnail-img" alt="HUD Thumbnail Buffer">
-                            <span id="hudThumbPlaceholder" style="font-size: 11px; color:var(--text-secondary);">No asset loaded</span>
-                        </div>
-                    </div>
-
-                    <div class="hud-section">
-                        <span class="hud-label">Input Feed</span>
-                        <video id="hudLocalVideo" class="hud-mirror-video" autoplay muted playsinline></video>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="hud-section" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
-                        <span class="hud-label">Mini Log</span>
-                        <div id="hudMiniConsole" class="hud-mini-log"></div>
-                    </div>
-                </div>
+            <div class="hud-floating-actions">
+                <button id="hudBtnStop" class="hud-btn-action hud-btn-stop-floating" disabled>Stop Stream</button>
+                <button id="hudExitBtn" class="hud-btn-action hud-btn-close">✕ Close HUD</button>
             </div>
         </div>
     </div>
