@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v2.2.1 by BrainRex</title>
+    <title>CoreSync Studio v2.2.2 by BrainRex</title>
     <style>
         /* Modern UI Design Tokens */
         :root {
@@ -414,23 +414,6 @@
     <script type="module">
         let sdkModuleLoaded = false;
         let createDecartClient, models;
-
-        // Wrapped SDK Import inside Explicit try/catch block to prevent Silent Bricking
-        try {
-            const sdk = await import("https://esm.sh/@decartai/sdk");
-            createDecartClient = sdk.createDecartClient;
-            models = sdk.models;
-            sdkModuleLoaded = true;
-            console.log("[OK] Decart Core Module Framework compiled safely.");
-        } catch (sdkError) {
-            console.error("[CRITICAL] SDK Import Failed via ESM Link: ", sdkError);
-            document.addEventListener('DOMContentLoaded', () => {
-                logToConsole("❌ SDK Error: Unable to fetch cloud stream wrappers. Start disabled.", true);
-                const startBtn = document.getElementById('btnConnect');
-                if (startBtn) startBtn.disabled = true;
-            });
-        }
-
         let client;
         let realtimeClient;
         let localStream;
@@ -439,13 +422,32 @@
         let currentTimeRemaining = 0; 
         const BURN_RATE = 2; // 2 credits per second
 
-        // Resilient State Machine Reconnect Listener System
         let reconnectAttempts = 0;
         let isReconnecting = false;
         const MAX_RECONNECT_ATTEMPTS = 3;
-        const RECONNECT_DELAYS = [2000, 4000, 6000]; // 2s, 4s, 6s
+        const RECONNECT_DELAYS = [2000, 4000, 6000];
 
-        // Hardware Scan Configuration
+        // Safe Asynchronous Module Core Initialization to Bypass Top-Level Await Drops on Mobile Engines
+        async function initApp() {
+            try {
+                const sdk = await import("https://esm.sh/@decartai/sdk");
+                createDecartClient = sdk.createDecartClient;
+                models = sdk.models;
+                sdkModuleLoaded = true;
+                console.log("[OK] Decart Core Module Framework compiled safely.");
+            } catch (sdkError) {
+                console.error("[CRITICAL] SDK Import Failed via ESM Link: ", sdkError);
+                logToConsole("❌ SDK Error: Unable to fetch cloud stream wrappers. Start disabled.", true);
+                const startBtn = document.getElementById('btnConnect');
+                if (startBtn) startBtn.disabled = true;
+            }
+
+            // Run structural startup bindings smoothly
+            fetchHardware();
+            startSystemClocks();
+            assessKeyStatus();
+        }
+
         async function fetchHardware() {
             try {
                 await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
@@ -473,22 +475,6 @@
                 logToConsole("Hardware scan failed: " + err.message, true);
             }
         }
-
-        // Theme Configuration
-        document.addEventListener('DOMContentLoaded', () => {
-            const toggleBtn = document.getElementById('themeToggle');
-            const htmlEl = document.documentElement;
-            
-            toggleBtn.addEventListener('click', () => {
-                const currentTheme = htmlEl.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                htmlEl.setAttribute('data-theme', newTheme);
-                toggleBtn.innerHTML = newTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-            });
-            
-            fetchHardware();
-            startSystemClocks();
-        });
 
         function logToConsole(text, isError = false) {
             const consoleEl = document.getElementById('sysConsole');
@@ -528,7 +514,6 @@
             updateCountdownUI();
 
             countdownInterval = setInterval(() => {
-                // Keep UI locked open but freeze countdown billing during retry drops
                 if (isReconnecting) return;
 
                 currentTimeRemaining--;
@@ -586,7 +571,6 @@
                 keyInput.classList.remove('key-valid');
             }
 
-            // Real-time synchronization calculation
             if (!realtimeClient && !isReconnecting) {
                 clearCountdownEngine();
             }
@@ -669,7 +653,7 @@
                             width: { ideal: parseInt(resVal[0]) }, 
                             height: { ideal: parseInt(resVal[1]) },
                             frameRate: 30,
-                            facingMode: "user" // Formats cleanly to mobile front cameras natively
+                            facingMode: "user"
                         },
                         audio: false
                     };
@@ -694,7 +678,6 @@
             }
         }
 
-        // Separate core pipeline execution engine block to facilitate clean loop recovery recursion
         async function executePipelineConnection(model, imageBlob) {
             try {
                 realtimeClient = await client.realtime.connect(localStream, {
@@ -729,7 +712,6 @@
             }
         }
 
-        // State Machine Manager to Handle Sudden Disconnects Without UI Resets
         async function handleNetworkDisconnect(model, imageBlob) {
             if (isReconnecting) return; 
             
@@ -847,7 +829,6 @@
             logToConsole("System logging registers flushed.");
         }
 
-        // Native Interface Gating Framework for Seamless Mobile Video Call Mode
         function triggerHUDMode(activate) {
             const overlay = document.getElementById('hudOverlay');
             if (!overlay) return;
@@ -856,7 +837,6 @@
                 document.documentElement.style.overflow = "hidden";
                 document.body.style.overflow = "hidden";
                 
-                // Enforces browser element level canvas expansion safely on mobile viewports
                 if (overlay.requestFullscreen) {
                     overlay.requestFullscreen().catch(() => {});
                 } else if (overlay.webkitRequestFullscreen) {
@@ -880,8 +860,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            assessKeyStatus(); 
-
+            // Setup DOM event connections safely first
             document.getElementById('btnConnect')?.addEventListener('click', startStream);
             document.getElementById('btnStop')?.addEventListener('click', stopStream);
             document.getElementById('hudBtnStop')?.addEventListener('click', stopStream);
@@ -896,11 +875,13 @@
             document.getElementById('launchFullscreen')?.addEventListener('click', () => triggerHUDMode(true));
             document.getElementById('hudExitBtn')?.addEventListener('click', () => triggerHUDMode(false));
 
-            // Anti-Elastic Rubber-Banding block for touch scroll events in full screen mode
             document.getElementById('hudOverlay')?.addEventListener('touchmove', (e) => {
                 if (e.target.closest('.hud-control-tower')) return;
                 e.preventDefault();
             }, { passive: false });
+
+            // Launch safe application loader initialization 
+            initApp();
         });
     </script>
 </head>
@@ -908,7 +889,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v2.2.1</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v2.2.2</span></h2>
         </div>
         <div class="header-controls">
             <button id="themeToggle" class="theme-toggle">☀️ Light Mode</button>
@@ -1008,7 +989,7 @@
                     <div class="hud-section" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight:600;">CoreSync HUD</div>
-                            <div style="font-size:10px; color:var(--text-secondary);">v2.2.1 Monitor</div>
+                            <div style="font-size:10px; color:var(--text-secondary);">v2.2.2 Monitor</div>
                         </div>
                         <button id="hudExitBtn" style="height: 30px; font-size: 11px; padding: 0 12px; background:var(--bg-surface-hover); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); cursor:pointer;">✕ Close</button>
                     </div>
