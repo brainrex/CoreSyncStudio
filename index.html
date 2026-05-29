@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v3.2 by BrainRex</title>
+    <title>CoreSync Studio v3.3</title>
     <style>
         /* Liquid Glass Dynamic Design Tokens */
         :root {
@@ -443,7 +443,7 @@
                 createDecartClient = sdk.createDecartClient;
                 models = sdk.models;
                 sdkModuleLoaded = true;
-                console.log("[OK] Decart Core Module Framework compiled safely under v3.2 specs.");
+                console.log("[OK] Decart Core Module Framework compiled safely under v3.3 specs.");
             } catch (sdkError) {
                 logToConsole("❌ SDK Error: Unable to fetch cloud stream wrappers.", true);
             }
@@ -476,11 +476,21 @@
             }
         }
 
+        // --- UPDATED HARDWARE FETCH LOGIC ---
         async function fetchHardware() {
+            const camSelect = document.getElementById('cameraSelect');
+            if (!camSelect) return;
+
             try {
+                // 1. Silently request permission to unlock real device names
+                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                // 2. Fetch the devices now that permission is granted
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                const camSelect = document.getElementById('cameraSelect');
-                if (!camSelect) return;
+                
+                // 3. Stop the temporary stream immediately so the camera light turns off
+                tempStream.getTracks().forEach(track => track.stop());
+
                 camSelect.innerHTML = '';
                 
                 let count = 1;
@@ -488,14 +498,19 @@
                     if (device.kind === 'videoinput') {
                         const opt = document.createElement('option');
                         opt.value = device.deviceId;
+                        // It will now grab the actual label (e.g., "SplitCam") instead of falling back to "Camera 1"
                         opt.text = device.label || `Camera ${count++}`;
                         camSelect.appendChild(opt);
                     }
                 });
             } catch (err) {
-                console.log("Hardware enumeration skipped.");
+                console.log("Hardware enumeration blocked or skipped due to permissions.", err);
+                camSelect.innerHTML = '<option value="">Permission Denied</option>';
             }
         }
+
+        // Listen for new cameras being plugged in after the initial load
+        navigator.mediaDevices.ondevicechange = fetchHardware;
 
         function logToConsole(text, isError = false) {
             const consoleEl = document.getElementById('sysConsole');
@@ -726,7 +741,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v3.2</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v3.3</span></h2>
             <span class="studio-subtitle">by Brain Moth3rfucking Rex</span>
         </div>
         <div class="header-controls">
@@ -803,7 +818,7 @@
             <span style="font-size: 11px; font-weight:600; color:var(--text-secondary);">Toggle Output</span>
         </div>
         <div class="console-content" id="consoleContent">
-            <div class="console" id="sysConsole">CoreSync system diagnostics initialized for production v3.2...</div>
+            <div class="console" id="sysConsole">CoreSync system diagnostics initialized for production v3.3...</div>
         </div>
     </div>
 
