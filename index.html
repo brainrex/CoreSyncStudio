@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v3.1 by BrainRex</title>
+    <title>CoreSync Studio v3.2 by BrainRex</title>
     <style>
         /* Liquid Glass Dynamic Design Tokens */
         :root {
@@ -228,6 +228,12 @@
             animation: pulseGlow 2s infinite;
         }
 
+        @media (prefers-color-scheme: light) {
+            button:disabled {
+                background: rgba(0, 0, 0, 0.05) !important;
+            }
+        }
+
         @keyframes pulseGlow {
             0% { opacity: 0.8; }
             50% { opacity: 1; }
@@ -437,14 +443,37 @@
                 createDecartClient = sdk.createDecartClient;
                 models = sdk.models;
                 sdkModuleLoaded = true;
-                console.log("[OK] Decart Core Module Framework compiled safely under v3.1 specs.");
+                console.log("[OK] Decart Core Module Framework compiled safely under v3.2 specs.");
             } catch (sdkError) {
                 logToConsole("❌ SDK Error: Unable to fetch cloud stream wrappers.", true);
             }
 
-            fetchHardware();
+            checkDeviceType();
             calculateInitialTime();
             assessKeyStatus();
+        }
+
+        function checkDeviceType() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const hasTouch = navigator.maxTouchPoints > 1;
+            
+            // Explicit checks flag iOS, Android, and generalized mobile/tablet strings
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && hasTouch);
+            const isAndroid = /Android/i.test(userAgent);
+            const isGenericMobile = /Mobi|Tablet|Android|Silk/i.test(userAgent);
+
+            if (isIOS || isAndroid || (isGenericMobile && hasTouch)) {
+                console.log("[ISOLATION ENGINE] Non-Windows Mobile/Tablet platform detected. Hardlocking media peripherals elements.");
+                
+                // Enforce programmatic concealment over responsive elements to secure the view from PC-mode spoofing
+                const hiddenElements = document.querySelectorAll('.hide-on-mobile-tablet');
+                hiddenElements.forEach(el => {
+                    el.style.setProperty('display', 'none', 'important');
+                });
+            } else {
+                console.log("[ISOLATION ENGINE] PC/Desktop architecture recognized. Unlocking peripheral feeds.");
+                fetchHardware();
+            }
         }
 
         async function fetchHardware() {
@@ -521,14 +550,20 @@
             const rawKey = keyInput ? keyInput.value.trim() : '';
             const fileInput = document.getElementById('photoUpload')?.files[0];
             const startBtn = document.getElementById('btnConnect');
+            const stopBtn = document.getElementById('btnStop');
+            const hudStopBtn = document.getElementById('hudBtnStop');
             const fullscreenBtn = document.getElementById('launchFullscreen');
 
             if (realtimeClient) {
                 if (startBtn) startBtn.disabled = true;
+                if (stopBtn) stopBtn.disabled = false;
+                if (hudStopBtn) hudStopBtn.disabled = false;
                 if (fullscreenBtn) fullscreenBtn.disabled = false;
             } else {
-                if (fullscreenBtn) fullscreenBtn.disabled = true;
                 if (startBtn) startBtn.disabled = !(sdkModuleLoaded && rawKey.length > 0 && fileInput);
+                if (stopBtn) stopBtn.disabled = true;
+                if (hudStopBtn) hudStopBtn.disabled = true;
+                if (fullscreenBtn) fullscreenBtn.disabled = true;
             }
         }
 
@@ -540,11 +575,14 @@
 
             const rawKey = document.getElementById('apiKey')?.value.trim();
             const fileInput = document.getElementById('photoUpload')?.files[0];
-            const camId = document.getElementById('cameraSelect')?.value || '';
+            const camSelect = document.getElementById('cameraSelect');
+            const camId = (camSelect && camSelect.style.display !== 'none') ? camSelect.value : '';
             
             if (!rawKey || !fileInput) return;
 
             logToConsole(`Compiling session assets...`);
+            
+            // Lock out initiation vector and trigger stop toggles instantly
             document.getElementById('btnConnect').disabled = true;
             document.getElementById('btnStop').disabled = false;
             document.getElementById('hudBtnStop').disabled = false;
@@ -619,10 +657,6 @@
 
             const systemPill = document.getElementById('systemPill');
             if (systemPill) { systemPill.className = "status-pill idle"; systemPill.innerText = "IDLE"; }
-
-            // 🛠️ Force stop buttons to drop active state immediately
-            document.getElementById('btnStop').disabled = true;
-            document.getElementById('hudBtnStop').disabled = true;
             
             assessKeyStatus();
             logToConsole("Operational interfaces idling. Output monitors completely blanked out.");
@@ -692,7 +726,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v3.1</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v3.2</span></h2>
             <span class="studio-subtitle">by Brain Moth3rfucking Rex</span>
         </div>
         <div class="header-controls">
@@ -769,11 +803,10 @@
             <span style="font-size: 11px; font-weight:600; color:var(--text-secondary);">Toggle Output</span>
         </div>
         <div class="console-content" id="consoleContent">
-            <div class="console" id="sysConsole">CoreSync system diagnostics initialized for production v3.1...</div>
+            <div class="console" id="sysConsole">CoreSync system diagnostics initialized for production v3.2...</div>
         </div>
     </div>
 
-    <!-- HUD Overlay Viewport Frame -->
     <div id="hudOverlay" class="hud-fullscreen-overlay">
         <div class="hud-layout">
             <div class="hud-main-output">
