@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CoreSync Studio v3.7</title>
+    <title>CoreSync Studio v3.7.1</title>
     <style>
         /* Liquid Glass Dynamic Design Tokens */
         :root {
@@ -328,37 +328,43 @@
         .hud-main-output { width: 100%; height: 100%; background: #000; }
         .hud-main-output video { width: 100%; height: 100%; object-fit: contain; }
 
-        /* Fullscreen Overlay Parameters - Fixed at the bottom */
+        /* Fullscreen Overlay Parameters - Compact corner controls */
         .hud-watermark-timer {
             position: absolute;
-            bottom: clamp(20px, 5vh, 40px);
-            left: clamp(20px, 5vw, 40px);
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: clamp(6px, 1.5vh, 12px) clamp(12px, 2vw, 24px);
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            bottom: 16px;
+            left: 16px;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 6px;
             z-index: 100000;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
         }
-        .hud-watermark-label { font-size: clamp(9px, 1vh, 11px); font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .hud-watermark-value { font-size: clamp(16px, 2.5vh, 24px); font-weight: 800; color: #ffffff; font-family: ui-monospace, monospace; }
+        .hud-watermark-timer:hover { opacity: 1; }
+        .hud-watermark-label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .hud-watermark-value { font-size: 13px; font-weight: 800; color: #ffffff; font-family: ui-monospace, monospace; }
 
         .hud-floating-actions {
             position: absolute;
-            bottom: clamp(20px, 5vh, 40px);
-            right: clamp(20px, 5vw, 40px);
+            bottom: 16px;
+            right: 16px;
             display: flex;
-            gap: 12px;
+            gap: 8px;
             z-index: 100000;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
         }
-        .hud-btn-action { height: clamp(36px, 4.5vh, 46px); padding: 0 clamp(16px, 2vw, 24px); border-radius: 30px; font-weight: 700; font-size: clamp(11px, 1.5vh, 13px); }
-        .hud-btn-close { background: rgba(255, 255, 255, 0.15); color: #ffffff; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
-        .hud-btn-close:hover { background: rgba(255, 255, 255, 0.25); }
-        .hud-btn-stop-floating { background: #ef4444; color: #ffffff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4); }
+        .hud-floating-actions:hover { opacity: 1; }
+        .hud-btn-action { height: 30px; padding: 0 14px; border-radius: 20px; font-weight: 700; font-size: 11px; }
+        .hud-btn-close { background: rgba(255, 255, 255, 0.12); color: #ffffff; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); }
+        .hud-btn-close:hover { background: rgba(255, 255, 255, 0.22); }
+        .hud-btn-stop-floating { background: #ef4444; color: #ffffff; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35); }
 
         /* 📟 Tablet View UI Scaling */
         @media (min-width: 769px) and (max-width: 1024px) {
@@ -443,7 +449,7 @@
                 createDecartClient = sdk.createDecartClient;
                 models = sdk.models;
                 sdkModuleLoaded = true;
-                console.log("[OK] Decart Core Module Framework compiled safely under v3.7 specs.");
+                console.log("[OK] Decart Core Module Framework compiled safely under v3.7.1 specs.");
             } catch (sdkError) {
                 logToConsole("❌ SDK Error: Unable to fetch cloud stream wrappers.", true);
             }
@@ -668,14 +674,35 @@
                 localStream = null;
             }
 
-            document.getElementById('localVideo').srcObject = null;
-            document.getElementById('remoteVideo').srcObject = null;
-            document.getElementById('hudRemoteVideo').srcObject = null;
+            // Firefox fix: explicitly load empty src before nulling to force black frame
+            const videoIds = ['localVideo', 'remoteVideo', 'hudRemoteVideo'];
+            videoIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.pause();
+                    el.srcObject = null;
+                    el.src = '';
+                    el.load();
+                }
+            });
 
             const systemPill = document.getElementById('systemPill');
             if (systemPill) { systemPill.className = "status-pill idle"; systemPill.innerText = "IDLE"; }
-            
-            assessKeyStatus();
+
+            // Fix: explicitly force button states here instead of relying solely on assessKeyStatus
+            const startBtn = document.getElementById('btnConnect');
+            const stopBtn = document.getElementById('btnStop');
+            const hudStopBtn = document.getElementById('hudBtnStop');
+            const fullscreenBtn = document.getElementById('launchFullscreen');
+            const keyInput = document.getElementById('apiKey');
+            const fileInput = document.getElementById('photoUpload')?.files[0];
+            const rawKey = keyInput ? keyInput.value.trim() : '';
+
+            if (stopBtn) stopBtn.disabled = true;
+            if (hudStopBtn) hudStopBtn.disabled = true;
+            if (fullscreenBtn) fullscreenBtn.disabled = true;
+            if (startBtn) startBtn.disabled = !(sdkModuleLoaded && rawKey.length > 0 && fileInput);
+
             logToConsole("Operational interfaces idling. Output monitors completely blanked out.");
         }
 
@@ -684,10 +711,8 @@
             if (!overlay) return;
             if (activate) {
                 overlay.style.display = "block";
-                if (overlay.requestFullscreen) overlay.requestFullscreen().catch(() => {});
             } else {
                 overlay.style.display = "none";
-                if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
             }
         }
 
@@ -743,7 +768,7 @@
 
     <header class="studio-header">
         <div class="studio-title">
-            <h2>CoreSync Studio <span class="version-badge">v3.7</span></h2>
+            <h2>CoreSync Studio <span class="version-badge">v3.7.1</span></h2>
             <span class="studio-subtitle">by Brain Moth3rfucking Rex</span>
         </div>
         <div class="header-controls">
@@ -820,7 +845,7 @@
             <span style="font-size: 11px; font-weight:600; color:var(--text-secondary);">Toggle Output</span>
         </div>
         <div class="console-content" id="consoleContent">
-            <div class="console" id="sysConsole">CoreSync system diagnostics initialized for production v3.7...</div>
+            <div class="console" id="sysConsole">CoreSync system diagnostics initialized for production v3.7.1...</div>
         </div>
     </div>
 
